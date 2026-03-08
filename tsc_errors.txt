@@ -1,0 +1,41 @@
+src/App.tsx(173,43): error TS2339: Property 'value' does not exist on type 'ApiResponse'.
+src/App.tsx(173,62): error TS2339: Property 'priority' does not exist on type 'ApiResponse'.
+src/components/info/singly_linked_list/code.ts(3,17): error TS7006: Parameter 'value' implicitly has an 'any' type.
+src/components/info/singly_linked_list/code.ts(4,14): error TS2812: Property 'value' does not exist on type 'Node'. Try changing the 'lib' compiler option to include 'dom'.
+src/components/info/singly_linked_list/code.ts(5,14): error TS2812: Property 'next' does not exist on type 'Node'. Try changing the 'lib' compiler option to include 'dom'.
+src/components/info/singly_linked_list/code.ts(9,7): error TS6196: 'SinglyLinkedList' is declared but never used.
+src/components/info/singly_linked_list/code.ts(11,14): error TS2339: Property 'head' does not exist on type 'SinglyLinkedList'.
+src/components/info/singly_linked_list/code.ts(12,14): error TS2339: Property 'size' does not exist on type 'SinglyLinkedList'.
+src/components/info/singly_linked_list/code.ts(16,12): error TS7006: Parameter 'value' implicitly has an 'any' type.
+src/components/info/singly_linked_list/code.ts(20,21): error TS2812: Property 'next' does not exist on type 'Node'. Try changing the 'lib' compiler option to include 'dom'.
+src/components/info/singly_linked_list/code.ts(20,33): error TS2339: Property 'head' does not exist on type 'SinglyLinkedList'.
+src/components/info/singly_linked_list/code.ts(21,18): error TS2339: Property 'head' does not exist on type 'SinglyLinkedList'.
+src/components/info/singly_linked_list/code.ts(23,23): error TS2339: Property 'head' does not exist on type 'SinglyLinkedList'.
+src/components/info/singly_linked_list/code.ts(24,22): error TS2339: Property 'head' does not exist on type 'SinglyLinkedList'.
+src/components/info/singly_linked_list/code.ts(26,36): error TS2339: Property 'head' does not exist on type 'SinglyLinkedList'.
+src/components/info/singly_linked_list/code.ts(34,14): error TS2339: Property 'size' does not exist on type 'SinglyLinkedList'.
+src/components/info/singly_linked_list/code.ts(39,12): error TS7006: Parameter 'value' implicitly has an 'any' type.
+src/components/info/singly_linked_list/code.ts(40,19): error TS2339: Property 'head' does not exist on type 'SinglyLinkedList'.
+src/components/info/singly_linked_list/code.ts(42,18): error TS2339: Property 'head' does not exist on type 'SinglyLinkedList'.
+src/components/info/singly_linked_list/code.ts(43,18): error TS2339: Property 'head' does not exist on type 'SinglyLinkedList'.
+src/components/info/singly_linked_list/code.ts(43,30): error TS2339: Property 'head' does not exist on type 'SinglyLinkedList'.
+src/components/info/singly_linked_list/code.ts(44,18): error TS2339: Property 'size' does not exist on type 'SinglyLinkedList'.
+src/components/info/singly_linked_list/code.ts(48,28): error TS2339: Property 'head' does not exist on type 'SinglyLinkedList'.
+src/components/info/singly_linked_list/code.ts(55,18): error TS2339: Property 'size' does not exist on type 'SinglyLinkedList'.
+src/components/info/singly_linked_list/code.ts(63,12): error TS7006: Parameter 'value' implicitly has an 'any' type.
+src/components/info/singly_linked_list/code.ts(64,28): error TS2339: Property 'head' does not exist on type 'SinglyLinkedList'.
+src/components/info/singly_linked_list/code.ts(81,28): error TS2339: Property 'head' does not exist on type 'SinglyLinkedList'.
+src/components/info/singly_linked_list/code.ts(93,14): error TS2339: Property 'head' does not exist on type 'SinglyLinkedList'.
+src/components/info/singly_linked_list/code.ts(99,19): error TS2339: Property 'head' does not exist on type 'SinglyLinkedList'.
+src/components/info/singly_linked_list/code.ts(101,25): error TS2339: Property 'head' does not exist on type 'SinglyLinkedList'.
+src/components/info/singly_linked_list/code.ts(102,25): error TS2339: Property 'head' does not exist on type 'SinglyLinkedList'.
+src/components/info/singly_linked_list/code.ts(116,19): error TS2339: Property 'head' does not exist on type 'SinglyLinkedList'.
+src/components/info/singly_linked_list/code.ts(118,25): error TS2339: Property 'head' does not exist on type 'SinglyLinkedList'.
+src/components/info/singly_linked_list/code.ts(119,25): error TS2339: Property 'head' does not exist on type 'SinglyLinkedList'.
+src/components/info/singly_linked_list/code.ts(137,19): error TS2339: Property 'head' does not exist on type 'SinglyLinkedList'.
+src/components/info/singly_linked_list/code.ts(140,28): error TS2339: Property 'head' does not exist on type 'SinglyLinkedList'.
+src/components/info/singly_linked_list/code.ts(150,22): error TS2339: Property 'size' does not exist on type 'SinglyLinkedList'.
+src/components/VisualizationCanvas.tsx(352,9): error TS6133: 'handlePriorityEnqueue' is declared but its value is never read.
+src/components/VisualizationCanvas.tsx(362,9): error TS6133: 'handlePriorityDequeue' is declared but its value is never read.
+src/components/VisualizationCanvas.tsx(367,9): error TS6133: 'handlePriorityPeek' is declared but its value is never read.
+src/components/VisualizationCanvas.tsx(375,9): error TS6133: 'handlePriorityChange' is declared but its value is never read.
