@@ -624,26 +624,17 @@ export default function MergeSortViz() {
       </div>
 
       {/* Main Visualization */}
-      <div className="flex-1 relative p-6 flex flex-col" style={{ minHeight: 0 }}>
-        {/* Split Line */}
-        {currentStepData.phase !== 'intro' && currentStepData.phase !== 'complete' && (
-          <div className="absolute left-1/2 top-[15%] bottom-[25%] w-px bg-gray-600/30 z-0" />
-        )}
-
+      <div className="flex-1 relative p-6 flex flex-col gap-4" style={{ minHeight: 0 }}>
         {/* Half Labels */}
         {currentStepData.phase === 'split' || currentStepData.phase.includes('sort') || currentStepData.phase === 'merge' ? (
-          <div className="absolute top-[8%] left-0 right-0 flex justify-center gap-1/2 z-10">
-            <div className="text-sm text-blue-400 font-medium" style={{ position: 'absolute', left: '25%', transform: 'translateX(-50%)' }}>
-              Left half
-            </div>
-            <div className="text-sm text-rose-400 font-medium" style={{ position: 'absolute', left: '75%', transform: 'translateX(-50%)' }}>
-              Right half
-            </div>
+          <div className="flex justify-center gap-[50%]">
+            <div className="text-sm text-blue-400 font-medium">Left half</div>
+            <div className="text-sm text-rose-400 font-medium">Right half</div>
           </div>
         ) : null}
 
         {/* Input Tiles Row */}
-        <div className="flex-1 flex items-center justify-center">
+        <div className="flex items-center justify-center">
           <div className="relative" style={{ 
             display: 'flex', 
             gap: `${gap}px`,
@@ -682,7 +673,7 @@ export default function MergeSortViz() {
         </div>
 
         {/* Output Row Label */}
-        <div className="text-center text-xs text-gray-500 mt-4 mb-2">
+        <div className="text-center text-xs text-gray-500">
           Output Row
         </div>
 

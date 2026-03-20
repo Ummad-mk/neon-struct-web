@@ -15,7 +15,8 @@ export type DataStructureType =
   | 'priority_queue'
   | 'quick_sort'
   | 'merge_sort'
-  | 'insertion_sort';
+  | 'insertion_sort'
+  | 'selection_sort';
 
 export interface OperationInfo {
   name: string;

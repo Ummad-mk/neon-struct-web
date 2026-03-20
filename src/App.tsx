@@ -13,6 +13,7 @@ import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import QuickSortViz from './components/visualizations/QuickSortViz';
 import MergeSortViz from './components/visualizations/MergeSortViz';
 import InsertionSortViz from './components/visualizations/InsertionSortViz';
+import SelectionSortViz from './components/visualizations/SelectionSortViz';
 
 function App() {
   // --- View & Layout State ---
@@ -557,6 +558,8 @@ function App() {
             <MergeSortViz />
           ) : currentView === 'insertion_sort' ? (
             <InsertionSortViz />
+          ) : currentView === 'selection_sort' ? (
+            <SelectionSortViz />
           ) : (
             <>
               <VisualizationCanvas
