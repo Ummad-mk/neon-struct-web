@@ -65,10 +65,6 @@ const ALGORITHM_GROUPS = [
   {
     category: 'Sorting',
     items: [
-      { type: 'bubble_sort', label: 'Bubble Sort', icon: BarChart3 },
-      { type: 'selection_sort', label: 'Selection Sort', icon: BarChart3 },
-      { type: 'insertion_sort', label: 'Insertion Sort', icon: BarChart3 },
-      { type: 'merge_sort', label: 'Merge Sort', icon: BarChart3 },
       { type: 'quick_sort', label: 'Quick Sort', icon: BarChart3 },
     ]
   }
