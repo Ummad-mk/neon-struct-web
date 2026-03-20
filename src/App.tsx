@@ -10,6 +10,7 @@ import { DSInfo } from './components/info';
 import { useDataStructure } from './hooks/useDataStructure';
 import { useNotification } from './hooks/useNotification';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
+import QuickSortViz from './components/visualizations/QuickSortViz';
 
 function App() {
   // --- View & Layout State ---
@@ -548,6 +549,20 @@ function App() {
         <main className="flex-1 flex relative min-w-0">
           {currentView === 'dashboard' ? (
             <Dashboard onStart={() => setCurrentView('singly_linked_list')} />
+          ) : currentView === 'quick_sort' ? (
+            <>
+              <QuickSortViz />
+              <OperationPanel
+                operationInfo={operationInfo}
+                activeDS={activeDS}
+                viewport={viewport}
+                onViewCode={(mode) => setModalState({ isOpen: true, type: 'code', mode })}
+                onViewPseudoCode={(mode) => setModalState({ isOpen: true, type: 'pseudo', mode })}
+                onViewAlgorithm={(mode) => setModalState({ isOpen: true, type: 'algorithm', mode })}
+                isCollapsed={rightCollapsed}
+                onToggleCollapse={() => setRightCollapsed(!rightCollapsed)}
+              />
+            </>
           ) : (
             <>
               <VisualizationCanvas
