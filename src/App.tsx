@@ -12,6 +12,7 @@ import { useNotification } from './hooks/useNotification';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import QuickSortViz from './components/visualizations/QuickSortViz';
 import MergeSortViz from './components/visualizations/MergeSortViz';
+import InsertionSortViz from './components/visualizations/InsertionSortViz';
 
 function App() {
   // --- View & Layout State ---
@@ -554,6 +555,8 @@ function App() {
             <QuickSortViz />
           ) : currentView === 'merge_sort' ? (
             <MergeSortViz />
+          ) : currentView === 'insertion_sort' ? (
+            <InsertionSortViz />
           ) : (
             <>
               <VisualizationCanvas
