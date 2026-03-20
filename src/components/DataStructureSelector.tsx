@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { DataStructureType } from '../types/dataStructures';
 import {
   Link2, Repeat, Layers, List, ArrowLeftRight, Binary, Network, GitFork, ArrowDownUp,
-  BarChart3,
+  BarChart3, Search,
   ChevronLeft, ChevronRight, LayoutDashboard, Undo2, Redo2, Settings, ChevronDown, ChevronUp
 } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
@@ -71,6 +71,15 @@ const ALGORITHM_GROUPS = [
       { type: 'selection_sort', label: 'Selection Sort', icon: BarChart3 },
       { type: 'heap_sort', label: 'Heap Sort', icon: BarChart3 },
       { type: 'bubble_sort', label: 'Bubble Sort', icon: BarChart3 },
+    ]
+  }
+];
+
+const SEARCHING_GROUPS = [
+  {
+    category: 'Searching',
+    items: [
+      { type: 'linear_search', label: 'Linear Search', icon: Search },
     ]
   }
 ];
@@ -220,7 +229,7 @@ export function DataStructureSelector({
           })}
 
           {/* ALGORITHM GROUPS */}
-          {ALGORITHM_GROUPS.map((group) => {
+          {[...ALGORITHM_GROUPS, ...SEARCHING_GROUPS].map((group) => {
             const isOpen = openGroups[group.category] ?? true;
             return (
               <div key={group.category} className="mb-2">
