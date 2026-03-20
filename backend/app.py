@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from data_structures import (
     SinglyLinkedList, DoublyLinkedList, Queue, DoubleEndedQueue, PriorityQueue,
-    Stack, BinarySearchTree, AVLTree, Graph, DirectedGraph
+    Stack, BinarySearchTree, AVLTree, Graph, DirectedGraph, HashTable, Trie, SegmentTree, RedBlackTree
 )
 from utils import ComplexityTracker
 import random
@@ -27,7 +27,12 @@ def get_ds_instance(ds_type, ds_id):
             'avl': lambda: AVLTree(),
             'priority_queue': lambda: PriorityQueue(),
             'graph': lambda: Graph(),
-            'directed_graph': lambda: DirectedGraph()
+            'directed_graph': lambda: DirectedGraph(),
+            'hash_table': lambda: HashTable(),
+            'trie': lambda: Trie()
+            ,
+            'segment_tree': lambda: SegmentTree(),
+            'red_black_tree': lambda: RedBlackTree()
         }
         data_structures[key] = ds_map[ds_type]()
     return data_structures[key]
@@ -107,6 +112,24 @@ def search(ds_type, ds_id):
     result['operation'] = f"Searching for {value}"
     return jsonify(result)
 
+@app.route('/api/ds/<ds_type>/<ds_id>/set_mode', methods=['POST'])
+def set_mode(ds_type, ds_id):
+    if ds_type != 'hash_table':
+        return jsonify({'success': False, 'message': 'Mode switching is only available for hash table'}), 400
+
+    save_state_for_undo(ds_type, ds_id)
+    data = request.json or {}
+    mode = data.get('mode', 'linear')
+
+    ds = get_ds_instance(ds_type, ds_id)
+    if not hasattr(ds, 'set_mode'):
+        return jsonify({'success': False, 'message': 'Mode switching not supported'}), 400
+
+    result = ds.set_mode(mode)
+    result['complexity'] = 'O(n)'
+    result['operation'] = f"Switch mode to {mode}"
+    return jsonify(result)
+
 @app.route('/api/ds/<ds_type>/<ds_id>/peek', methods=['POST'])
 def peek(ds_type, ds_id):
     if ds_type != 'priority_queue':
@@ -148,7 +171,7 @@ def add_random(ds_type, ds_id):
     results = []
 
     # --- SMART RANDOM GENERATION ---
-    if ds_type == 'bst' or ds_type == 'avl':
+    if ds_type == 'bst' or ds_type == 'avl' or ds_type == 'red_black_tree':
         # Generate a "balanced-like" sequence
         # E.g., Start with middle, then quarters, etc.
         # This prevents the "skewed line" look
@@ -162,6 +185,16 @@ def add_random(ds_type, ds_id):
              values = random.sample(range(1, 100), count)
     elif ds_type == 'priority_queue':
         values = random.sample(range(1, 100), count)
+    elif ds_type == 'trie':
+        words_pool = ['cat', 'car', 'card', 'care', 'cart', 'dog', 'dot', 'dove', 'deal', 'dear', 'tree', 'trie', 'trip']
+        random.shuffle(words_pool)
+        values = words_pool[:count]
+    elif ds_type == 'segment_tree':
+        ds = get_ds_instance(ds_type, ds_id)
+        result = ds.add_random(count)
+        operation = 'build'
+        complexity = ComplexityTracker.get_complexity(ds_type, operation)
+        return jsonify({'success': True, 'results': result.get('results'), 'complexity': complexity, 'operation': f'Build random {count}', 'state': ds.to_dict()})
     else:
         values = [random.randint(1, 100) for _ in range(count)]
     
@@ -197,6 +230,48 @@ def add_random(ds_type, ds_id):
         'operation': f"Added {len(values)} random values",
         'state': ds.to_dict()
     })
+
+# --- Segment Tree specific ---
+@app.route('/api/ds/<ds_type>/<ds_id>/build', methods=['POST'])
+def build_segment(ds_type, ds_id):
+    if ds_type != 'segment_tree':
+        return jsonify({'success': False, 'message': 'Build only available for segment_tree'}), 400
+    save_state_for_undo(ds_type, ds_id)
+    data = request.json or {}
+    array = data.get('array', [])
+    ds = get_ds_instance(ds_type, ds_id)
+    result = ds.build(array)
+    result['complexity'] = ComplexityTracker.get_complexity(ds_type, 'build')
+    result['operation'] = 'Build Segment Tree'
+    return jsonify(result)
+
+@app.route('/api/ds/<ds_type>/<ds_id>/range_query', methods=['POST'])
+def range_query(ds_type, ds_id):
+    if ds_type != 'segment_tree':
+        return jsonify({'success': False, 'message': 'Range query only available for segment_tree'}), 400
+    data = request.json or {}
+    l = data.get('l', 0)
+    r = data.get('r', 0)
+    op = data.get('op', 'sum')
+    ds = get_ds_instance(ds_type, ds_id)
+    result = ds.range_query(l, r, op)
+    result['complexity'] = ComplexityTracker.get_complexity(ds_type, 'range_query')
+    result['operation'] = f"Range Query [{l}..{r}] ({op})"
+    return jsonify(result)
+
+@app.route('/api/ds/<ds_type>/<ds_id>/point_update', methods=['POST'])
+def point_update(ds_type, ds_id):
+    if ds_type != 'segment_tree':
+        return jsonify({'success': False, 'message': 'Point update only available for segment_tree'}), 400
+    save_state_for_undo(ds_type, ds_id)
+    data = request.json or {}
+    idx = data.get('idx', 0)
+    val = data.get('val', 0)
+    ds = get_ds_instance(ds_type, ds_id)
+    result = ds.point_update(idx, val)
+    result['complexity'] = ComplexityTracker.get_complexity(ds_type, 'point_update')
+    result['operation'] = f"Point Update idx={idx} → {val}"
+    return jsonify(result)
 
 @app.route('/api/ds/<ds_type>/<ds_id>/add_edge', methods=['POST'])
 def add_edge(ds_type, ds_id):

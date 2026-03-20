@@ -27,27 +27,11 @@ function App() {
 
   // --- Visualization & Operation State ---
   const [visualizationData, setVisualizationData] = useState<any>(null);
-  const [minimapMeta, setMinimapMeta] = useState<{
-    visited: number[];
-    found?: number;
-    highlight?: number;
-    operation: 'insert' | 'delete' | 'search' | 'reverse' | 'traverse' | null;
-    insertingNode?: number;
-    deletingNode?: number;
-  }>({
-    visited: [],
-    found: undefined,
-    highlight: undefined,
-    operation: null,
-    insertingNode: undefined,
-    deletingNode: undefined,
-  });
   const [operationInfo, setOperationInfo] = useState<OperationInfo>({
     name: 'Ready',
     stepCount: 0,
     currentComplexity: '-',
     totalComplexity: '-',
-    spaceComplexity: '-',
   });
 
   // --- Custom Hooks ---
@@ -62,7 +46,7 @@ function App() {
   useEffect(() => {
     if (currentView !== 'dashboard') {
       setVisualizationData(null);
-      setOperationInfo({ name: 'Ready', stepCount: 0, currentComplexity: '-', totalComplexity: '-', spaceComplexity: '-' });
+      setOperationInfo({ name: 'Ready', stepCount: 0, currentComplexity: '-', totalComplexity: '-' });
       setViewport({ x: 0, y: 0, scale: 1 }); // Reset zoom/pan
       ds.clear();
       ds.getState(); // Fetch fresh state from backend
@@ -93,7 +77,6 @@ function App() {
           stepCount: (result.steps?.length ?? 0) || 1,
           currentComplexity: result.complexity || 'O(1)',
           totalComplexity: result.complexity || 'O(1)',
-          spaceComplexity: 'O(1)',
         });
       } else {
         addNotification(result.message || 'Insert failed', 'error');
@@ -124,7 +107,6 @@ function App() {
           stepCount: (result.steps?.length ?? 0) || 1,
           currentComplexity: result.complexity || 'O(n)',
           totalComplexity: result.complexity || 'O(n)',
-          spaceComplexity: 'O(1)',
         });
       } else {
         addNotification(result.message || 'Delete failed', 'error');
@@ -154,7 +136,6 @@ function App() {
         stepCount: result.steps?.length ?? 0,
         currentComplexity: result.complexity || 'O(n)',
         totalComplexity: result.complexity || 'O(n)',
-        spaceComplexity: 'O(1)',
       });
 
       return result;
@@ -165,61 +146,9 @@ function App() {
     }
   };
 
-  const handlePeek = async () => {
-    try {
-      if ('peek' in ds && typeof ds.peek === 'function') {
-        const result = await ds.peek();
-        if (result.success) {
-          addNotification(`Peek: ${result.value} (p=${result.priority})`, 'success');
-          if (result.state) setVisualizationData(result.state);
-        } else {
-          addNotification(result.message || 'Peek failed', 'error');
-        }
-        setOperationInfo({
-          name: 'Peek',
-          stepCount: Array.isArray(result.steps) ? result.steps.length : (result.steps ?? 0),
-          currentComplexity: result.complexity || 'O(1)',
-          totalComplexity: result.complexity || 'O(1)',
-          spaceComplexity: 'O(1)',
-        });
-        return result;
-      }
-    } catch (error) {
-      console.error(error);
-      addNotification('Peek error occurred', 'error');
-      return null;
-    }
-  };
-
-  const handleChangePriority = async (val: number, priority: number) => {
-    try {
-      if ('changePriority' in ds && typeof ds.changePriority === 'function') {
-        const result = await ds.changePriority(val, priority);
-        if (result.success) {
-          addNotification(`Priority updated for ${val}`, 'success');
-          if (result.state) setVisualizationData(result.state);
-        } else {
-          addNotification(result.message || 'Change priority failed', 'error');
-        }
-        setOperationInfo({
-          name: `Change Priority ${val} → ${priority}`,
-          stepCount: Array.isArray(result.steps) ? result.steps.length : (result.steps ?? 0),
-          currentComplexity: result.complexity || 'O(n)',
-          totalComplexity: result.complexity || 'O(n)',
-          spaceComplexity: 'O(1)',
-        });
-        return result;
-      }
-    } catch (error) {
-      console.error(error);
-      addNotification('Change priority error occurred', 'error');
-      return null;
-    }
-  };
-
   const handleAddRandom = async () => {
     try {
-      const result = await ds.addRandom(7);
+      const result = await ds.addRandom(5);
 
       if (result.success) {
         addNotification('Random values added', 'success');
@@ -228,10 +157,9 @@ function App() {
         }
         setOperationInfo({
           name: 'Insert (Random)',
-          stepCount: result.results?.length ?? 7,
+          stepCount: result.results?.length ?? 5,
           currentComplexity: result.complexity || 'O(1)',
           totalComplexity: result.complexity || 'O(1)',
-          spaceComplexity: 'O(1)',
         });
       }
 
@@ -249,14 +177,9 @@ function App() {
 
       if (result.success) {
         addNotification(`Edge ${u}-${v} added`, 'success');
-        if (result.state) setVisualizationData(result.state);
-        setOperationInfo({
-          name: `Add Edge ${u}-${v}`,
-          stepCount: 1,
-          currentComplexity: 'O(1)',
-          totalComplexity: 'O(1)',
-          spaceComplexity: 'O(1)',
-        });
+        if (result.state) {
+          setVisualizationData(result.state);
+        }
       }
 
       return result;
@@ -326,13 +249,6 @@ function App() {
           const hasCycle = (result as any).has_cycle;
           const message = hasCycle ? 'Cycle detected!' : 'No cycle found';
           addNotification(message, hasCycle ? 'error' : 'success');
-          setOperationInfo({
-            name: 'Detect Cycle',
-            stepCount: Array.isArray(result.steps) ? result.steps.length : (result.steps ?? 0),
-            currentComplexity: result.complexity || 'O(V + E)',
-            totalComplexity: result.complexity || 'O(V + E)',
-            spaceComplexity: 'O(V)',
-          });
         }
 
         return result;
@@ -378,44 +294,17 @@ function App() {
     try {
       if ('traverse' in ds && typeof ds.traverse === 'function') {
         const result = await ds.traverse(type);
-        if (result.success) {
-          addNotification(`Completed ${type} traversal`, 'success');
-          const complexity = (activeDS === 'graph' || activeDS === 'directed_graph') ? 'O(V + E)' : 'O(n)';
-          setOperationInfo({
-            name: `${type.charAt(0).toUpperCase() + type.slice(1)} Traversal`,
-            stepCount: Array.isArray(result.steps) ? result.steps.length : 0,
-            currentComplexity: result.complexity || complexity,
-            totalComplexity: result.complexity || complexity,
-            spaceComplexity: (activeDS === 'graph' || activeDS === 'directed_graph') ? 'O(V)' : 'O(n)',
-          });
-        }
+        if (result.success) addNotification(`Completed ${type} traversal`, 'success');
         return result;
       }
-    } catch (e) { console.error(e); return null; }
+    } catch (error) { console.error(error); return null; }
   };
 
   const handleFindMinMax = async (type: string) => {
     try {
       if ('findMinMax' in ds && typeof ds.findMinMax === 'function') {
         const result = await ds.findMinMax(type);
-        if (result.success) {
-          addNotification(`Found ${type}: ${result.result}`, 'success');
-          setOperationInfo({
-            name: `Find ${type === 'min' ? 'Min' : 'Max'}`,
-            stepCount: Array.isArray(result.steps) ? result.steps.length : (result.steps ?? 0),
-            currentComplexity: result.complexity || 'O(log n)',
-            totalComplexity: result.complexity || 'O(log n)',
-            spaceComplexity: 'O(1)',
-          });
-        } else {
-          setOperationInfo({
-            name: `Find ${type === 'min' ? 'Min' : 'Max'}`,
-            stepCount: Array.isArray(result.steps) ? result.steps.length : (result.steps ?? 0),
-            currentComplexity: result.complexity || 'O(log n)',
-            totalComplexity: result.complexity || 'O(log n)',
-            spaceComplexity: 'O(1)',
-          });
-        }
+        if (result.success) addNotification(`Found ${type}: ${result.result}`, 'success');
         return result;
       }
     } catch (error) { console.error(error); return null; }
@@ -427,13 +316,6 @@ function App() {
         const result = await ds.findSuccessorPredecessor(val, type);
         if (result.success) addNotification(`Found ${type}: ${result.result}`, 'success');
         else addNotification(result.message || 'Not found', 'error');
-        setOperationInfo({
-          name: `Find ${type === 'successor' ? 'Successor' : 'Predecessor'} ${val}`,
-          stepCount: Array.isArray(result.steps) ? result.steps.length : (result.steps ?? 0),
-          currentComplexity: result.complexity || 'O(log n)',
-          totalComplexity: result.complexity || 'O(log n)',
-          spaceComplexity: 'O(1)',
-        });
         return result;
       }
     } catch (error) { console.error(error); return null; }
@@ -444,13 +326,6 @@ function App() {
       if ('getHeight' in ds && typeof ds.getHeight === 'function') {
         const result = await ds.getHeight();
         if (result.success) addNotification(`Tree height: ${result.result}`, 'success');
-        setOperationInfo({
-          name: 'Get Height',
-          stepCount: Array.isArray(result.steps) ? result.steps.length : (result.steps ?? 0),
-          currentComplexity: result.complexity || 'O(n)',
-          totalComplexity: result.complexity || 'O(n)',
-          spaceComplexity: 'O(h)',
-        });
         return result;
       }
     } catch (error) { console.error(error); return null; }
@@ -461,13 +336,6 @@ function App() {
       if ('countNodes' in ds && typeof ds.countNodes === 'function') {
         const result = await ds.countNodes();
         if (result.success) addNotification(`Total nodes: ${result.result}`, 'success');
-        setOperationInfo({
-          name: 'Count Nodes',
-          stepCount: Array.isArray(result.steps) ? result.steps.length : (result.steps ?? 0),
-          currentComplexity: result.complexity || 'O(n)',
-          totalComplexity: result.complexity || 'O(n)',
-          spaceComplexity: 'O(h)',
-        });
         return result;
       }
     } catch (error) { console.error(error); return null; }
@@ -478,13 +346,6 @@ function App() {
       if ('rangeSearch' in ds && typeof ds.rangeSearch === 'function') {
         const result = await ds.rangeSearch(min, max);
         if (result.success) addNotification(`Found ${result.result?.length || 0} nodes in range`, 'success');
-        setOperationInfo({
-          name: `Range Search ${min}..${max}`,
-          stepCount: Array.isArray(result.steps) ? result.steps.length : (result.steps ?? 0),
-          currentComplexity: result.complexity || 'O(n)',
-          totalComplexity: result.complexity || 'O(n)',
-          spaceComplexity: 'O(h)',
-        });
         return result;
       }
     } catch (error) { console.error(error); return null; }
@@ -496,13 +357,6 @@ function App() {
         const result = await ds.lowestCommonAncestor(val1, val2);
         if (result.success) addNotification(`Found LCA: ${result.result}`, 'success');
         else addNotification(result.message || 'LCA not found', 'error');
-        setOperationInfo({
-          name: `LCA ${val1}, ${val2}`,
-          stepCount: Array.isArray(result.steps) ? result.steps.length : (result.steps ?? 0),
-          currentComplexity: result.complexity || 'O(log n)',
-          totalComplexity: result.complexity || 'O(log n)',
-          spaceComplexity: 'O(1)',
-        });
         return result;
       }
     } catch (error) { console.error(error); return null; }
@@ -516,13 +370,6 @@ function App() {
         if (result.success) {
           addNotification(`Edge ${from}-${to} deleted`, 'success');
           if (result.state) setVisualizationData(result.state);
-          setOperationInfo({
-            name: `Delete Edge ${from}-${to}`,
-            stepCount: Array.isArray(result.steps) ? result.steps.length : 1,
-            currentComplexity: 'O(E)',
-            totalComplexity: 'O(E)',
-            spaceComplexity: 'O(1)',
-          });
         }
         else addNotification(result.message || 'Delete failed', 'error');
         return result;
@@ -534,16 +381,8 @@ function App() {
     try {
       if ('findPath' in ds && typeof ds.findPath === 'function') {
         const result = await ds.findPath(start, end);
-        if (result.success) {
-          addNotification(`Path found`, 'success');
-          setOperationInfo({
-            name: `Find Path ${start}→${end}`,
-            stepCount: Array.isArray(result.steps) ? result.steps.length : 0,
-            currentComplexity: 'O(V + E)',
-            totalComplexity: 'O(V + E)',
-            spaceComplexity: 'O(V)',
-          });
-        } else addNotification(result.message || 'No path found', 'error');
+        if (result.success) addNotification(`Path found`, 'success');
+        else addNotification(result.message || 'No path found', 'error');
         return result;
       }
     } catch (e) { console.error(e); return null; }
@@ -553,16 +392,8 @@ function App() {
     try {
       if ('shortestPath' in ds && typeof ds.shortestPath === 'function') {
         const result = await ds.shortestPath(start, end);
-        if (result.success) {
-          addNotification(`Shortest path found (cost: ${result.cost})`, 'success');
-          setOperationInfo({
-            name: `Shortest Path ${start}→${end}`,
-            stepCount: Array.isArray(result.steps) ? result.steps.length : 0,
-            currentComplexity: result.complexity || 'O((V+E) log V)',
-            totalComplexity: result.complexity || 'O((V+E) log V)',
-            spaceComplexity: 'O(V)',
-          });
-        } else addNotification(result.message || 'No path found', 'error');
+        if (result.success) addNotification(`Shortest path found (cost: ${result.cost})`, 'success');
+        else addNotification(result.message || 'No path found', 'error');
         return result;
       }
     } catch (e) { console.error(e); return null; }
@@ -576,10 +407,9 @@ function App() {
           addNotification(`Topological sort complete`, 'success');
           setOperationInfo({
             name: 'Topological Sort',
-            stepCount: Array.isArray(result.steps) ? result.steps.length : (result.steps ?? 0),
+            stepCount: Array.isArray(result.steps) ? result.steps.length : (result.steps || 0),
             currentComplexity: result.complexity || 'O(V + E)',
-            totalComplexity: result.complexity || 'O(V + E)',
-            spaceComplexity: 'O(V)',
+            totalComplexity: result.complexity || 'O(V + E)'
           });
         } else {
           addNotification(result.message || 'Sort failed', 'error');
@@ -595,13 +425,11 @@ function App() {
         const result = await ds.minimumSpanningTree();
         if (result.success) {
           addNotification(`MST found (Prim's)`, 'success');
-          if (result.state) setVisualizationData(result.state);
           setOperationInfo({
             name: 'Finding MST (Prim\'s)',
-            stepCount: Array.isArray(result.steps) ? result.steps.length : (result.steps ?? 0),
+            stepCount: Array.isArray(result.steps) ? result.steps.length : (result.steps || 0),
             currentComplexity: result.complexity || 'O(E log V)',
-            totalComplexity: result.complexity || 'O(E log V)',
-            spaceComplexity: 'O(V)',
+            totalComplexity: result.complexity || 'O(E log V)'
           });
         } else {
           addNotification(result.message || 'MST failed', 'error');
@@ -617,13 +445,11 @@ function App() {
         const result = await ds.kruskalsMST();
         if (result.success) {
           addNotification(`MST found (Kruskal's)`, 'success');
-          if (result.state) setVisualizationData(result.state);
           setOperationInfo({
             name: 'Finding MST (Kruskal\'s)',
-            stepCount: Array.isArray(result.steps) ? result.steps.length : (result.steps ?? 0),
+            stepCount: Array.isArray(result.steps) ? result.steps.length : (result.steps || 0),
             currentComplexity: result.complexity || 'O(E log E)',
-            totalComplexity: result.complexity || 'O(E log E)',
-            spaceComplexity: 'O(V + E)',
+            totalComplexity: result.complexity || 'O(E log E)'
           });
         } else {
           addNotification(result.message || 'Kruskal\'s MST failed', 'error');
@@ -636,7 +462,7 @@ function App() {
   const handleClear = () => {
     ds.clear();
     setVisualizationData(null);
-    setOperationInfo({ name: 'Ready', stepCount: 0, currentComplexity: '-', totalComplexity: '-', spaceComplexity: '-' });
+    setOperationInfo({ name: 'Ready', stepCount: 0, currentComplexity: '-', totalComplexity: '-' });
     addNotification('Canvas Cleared', 'info');
   };
 
@@ -654,32 +480,12 @@ function App() {
 
   // --- Modal Logic (View Code / Algo) ---
 
-  // Helper: Detect current operation key for modal content (Full vs Current step)
-  const getCurrentOperationKey = (): string | null => {
+  // Helper: Detect if we are currently Inserting, Deleting, or Searching
+  const getCurrentOperationKey = () => {
     const opName = operationInfo.name.toLowerCase();
-    if (opName.includes('insert') || opName.includes('add') || opName.includes('push') || opName.includes('enqueue') || opName.includes('random')) return 'insert';
+    if (opName.includes('insert') || opName.includes('add') || opName.includes('push') || opName.includes('enqueue')) return 'insert';
     if (opName.includes('delet') || opName.includes('remove') || opName.includes('pop') || opName.includes('dequeue')) return 'delete';
-    if (opName.includes('search') && !opName.includes('path') && !opName.includes('shortest')) return 'search';
-    if (opName.includes('peek')) return 'peek';
-    if (opName.includes('priority')) return 'change_priority';
-    if (opName.includes('traverse') || opName.includes('bfs') || opName.includes('dfs') || opName.includes('inorder') || opName.includes('preorder') || opName.includes('postorder') || opName.includes('levelorder')) return 'traverse';
-    if (opName.includes('mst') && opName.includes('prim')) return 'minimum_spanning_tree';
-    if (opName.includes('mst') && opName.includes('kruskal')) return 'kruskals_mst';
-    if (opName.includes('topological')) return 'topological_sort';
-    if (opName.includes('shortest') && opName.includes('path')) return 'shortest_path';
-    if (opName.includes('path') && !opName.includes('shortest')) return 'find_path';
-    if (opName.includes('add') && opName.includes('edge')) return 'add_edge';
-    if (opName.includes('delete') && opName.includes('edge')) return 'delete_edge';
-    if (opName.includes('find') && (opName.includes('min') || opName.includes('max'))) return 'find_min_max';
-    if (opName.includes('height')) return 'get_height';
-    if (opName.includes('count') && opName.includes('node')) return 'count_nodes';
-    if (opName.includes('range')) return 'range_search';
-    if (opName.includes('lca') || opName.includes('ancestor')) return 'lca';
-    if (opName.includes('reverse')) return 'reverse';
-    if (opName.includes('middle')) return 'get_middle';
-    if (opName.includes('cycle')) return 'detect_cycle';
-    if (opName.includes('duplicate')) return 'remove_duplicates';
-    if (opName.includes('successor') || opName.includes('predecessor')) return 'find_successor_predecessor';
+    if (opName.includes('search') || opName.includes('find') || opName.includes('check')) return 'search';
     return null;
   };
 
@@ -723,7 +529,7 @@ function App() {
 
   // --- Render ---
   return (
-    <div className={`h-screen flex flex-col font-sans overflow-hidden ${isLight ? 'bg-[#f5f7ff] text-gray-900' : 'bg-[#050b14] text-gray-100'
+    <div className={`h-screen flex flex-col font-sans overflow-hidden ${isLight ? 'bg-[#f5f5ff] text-gray-900' : 'bg-[#050b14] text-gray-100'
       }`}>
       <div className="flex-1 flex overflow-hidden relative">
         {/* Sidebar */}
@@ -749,18 +555,17 @@ function App() {
                 state={visualizationData}
                 viewport={viewport}
                 onViewportChange={setViewport}
-                onMinimapUpdate={setMinimapMeta}
                 onInsert={handleInsert}
                 onDelete={handleDelete}
                 onSearch={handleSearch}
                 onAddRandom={handleAddRandom}
-                onAddEdge={(currentView === 'graph' || currentView === 'directed_graph') ? handleAddEdge : undefined}
+                onAddEdge={currentView === 'graph' ? handleAddEdge : undefined}
                 onClear={handleClear}
-                onReverse={['singly_linked_list', 'doubly_linked_list', 'stack', 'queue', 'deque'].includes(currentView) ? handleReverse : undefined}
+                onReverse={(currentView === 'singly_linked_list' || currentView === 'doubly_linked_list' || currentView === 'stack' || currentView === 'queue' || currentView === 'deque') ? handleReverse : undefined}
                 onGetMiddle={currentView === 'singly_linked_list' ? handleGetMiddle : undefined}
-                onDetectCycle={(currentView === 'singly_linked_list' || currentView === 'graph' || currentView === 'directed_graph') ? handleDetectCycle : undefined}
+                onDetectCycle={(currentView === 'singly_linked_list' || currentView === 'graph') ? handleDetectCycle : undefined}
                 onRemoveDuplicates={currentView === 'singly_linked_list' ? handleRemoveDuplicates : undefined}
-                onTraverse={(currentView === 'bst' || currentView === 'avl' || currentView === 'graph' || currentView === 'directed_graph') ? handleTraverse : undefined}
+                onTraverse={(currentView === 'bst' || currentView === 'avl' || currentView === 'graph') ? handleTraverse : undefined}
                 onFindMinMax={(currentView === 'bst' || currentView === 'avl') ? handleFindMinMax : undefined}
                 onFindSuccessorPredecessor={(currentView === 'bst' || currentView === 'avl') ? handleFindSuccessorPredecessor : undefined}
                 onGetHeight={(currentView === 'bst' || currentView === 'avl') ? handleGetHeight : undefined}
@@ -779,9 +584,6 @@ function App() {
                 operationInfo={operationInfo}
                 activeDS={activeDS}
                 viewport={viewport}
-                onViewportChange={setViewport}
-                visualizationData={visualizationData}
-                minimapMeta={minimapMeta}
                 onViewCode={(mode) => setModalState({ isOpen: true, type: 'code', mode })}
                 onViewPseudoCode={(mode) => setModalState({ isOpen: true, type: 'pseudo', mode })}
                 onViewAlgorithm={(mode) => setModalState({ isOpen: true, type: 'algorithm', mode })}

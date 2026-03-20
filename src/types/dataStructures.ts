@@ -6,16 +6,24 @@ export type DataStructureType =
   | 'stack'
   | 'bst'
   | 'avl'
-  | 'priority_queue'
   | 'graph'
-  | 'directed_graph';
+  | 'directed_graph'
+  | 'bubble_sort'
+  | 'selection_sort'
+  | 'insertion_sort'
+  | 'merge_sort'
+  | 'quick_sort'
+  | 'hash_table'
+  | 'trie'
+  | 'segment_tree'
+  | 'red_black_tree'
+  | 'priority_queue';
 
 export interface OperationInfo {
   name: string;
   stepCount: number;
   currentComplexity: string;
   totalComplexity: string;
-  spaceComplexity?: string;
 }
 
 export interface NotificationData {
@@ -54,6 +62,4 @@ export interface ApiResponse {
   visited?: number[];
   cost?: number;
   highlighted_edges?: [number, number][];
-  value?: any;
-  priority?: number;
 }

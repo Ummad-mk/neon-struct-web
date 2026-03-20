@@ -41,6 +41,15 @@ const DATA_STRUCTURE_GROUPS = [
     items: [
       { type: 'bst', label: 'BST Tree', icon: Binary },
       { type: 'avl', label: 'AVL Tree', icon: Binary },
+      { type: 'red_black_tree', label: 'Red-Black Tree', icon: Binary },
+      { type: 'trie', label: 'Trie', icon: Binary },
+      { type: 'segment_tree', label: 'Segment Tree', icon: Binary },
+    ]
+  },
+  {
+    category: 'Hash Tables',
+    items: [
+      { type: 'hash_table', label: 'Hash Table', icon: Layers }, // Or Database icon if available, Layers is safe
     ]
   },
   {
@@ -52,10 +61,17 @@ const DATA_STRUCTURE_GROUPS = [
   }
 ];
 
-const ALGORITHMS = [
-  { label: 'Sorting', icon: BarChart3 },
-  { label: 'Searching', icon: ScanSearch },
-  { label: 'Pathfinding', icon: Route },
+const ALGORITHM_GROUPS = [
+  {
+    category: 'Sorting',
+    items: [
+      { type: 'bubble_sort', label: 'Bubble Sort', icon: BarChart3 },
+      { type: 'selection_sort', label: 'Selection Sort', icon: BarChart3 },
+      { type: 'insertion_sort', label: 'Insertion Sort', icon: BarChart3 },
+      { type: 'merge_sort', label: 'Merge Sort', icon: BarChart3 },
+      { type: 'quick_sort', label: 'Quick Sort', icon: BarChart3 },
+    ]
+  }
 ];
 
 export function DataStructureSelector({
@@ -63,12 +79,16 @@ export function DataStructureSelector({
 }: Props) {
   const [settingsOpen, setSettingsOpen] = useState(false);
 
-  // Track open state for each category. Default to all open.
+  // Track open state for each category. Default to all closed.
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
-    'Linked Lists': true,
-    'Stacks & Queues': true,
-    'Trees': true,
-    'Graphs': true,
+    'Linked Lists': false,
+    'Stacks & Queues': false,
+    'Trees': false,
+    'Hash Tables': false,
+    'Graphs': false,
+    'Sorting': false,
+    'Searching': false,
+    'Pathfinding': false,
   });
 
   const toggleGroup = (category: string) => {
@@ -198,21 +218,43 @@ export function DataStructureSelector({
             );
           })}
 
-          {/* Divider */}
-          <div className={`h-px my-3 mx-1 ${isLight ? 'bg-gray-100' : 'bg-gray-800'}`} />
-
-          {/* ALGORITHMS section */}
-          {!isCollapsed && <p className={labelStyle}>Algorithms</p>}
-          {ALGORITHMS.map(({ label, icon: Icon }) => (
-            <button
-              key={label}
-              className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg transition-all text-sm opacity-50 cursor-not-allowed ${inactiveStyle}`}
-              title="Coming soon"
-            >
-              <Icon size={17} className="shrink-0" />
-              {!isCollapsed && <span>{label}</span>}
-            </button>
-          ))}
+          {/* ALGORITHM GROUPS */}
+          {ALGORITHM_GROUPS.map((group) => {
+            const isOpen = openGroups[group.category] ?? true;
+            return (
+              <div key={group.category} className="mb-2">
+                {!isCollapsed && (
+                  <button
+                    onClick={() => toggleGroup(group.category)}
+                    className={`w-full flex items-center justify-between px-3 py-1.5 mb-1 rounded-md transition-colors ${isLight ? 'text-gray-600 hover:bg-gray-100' : 'text-gray-400 hover:bg-gray-800/80'}`}
+                  >
+                    <span className="text-[11px] font-bold uppercase tracking-wider">{group.category}</span>
+                    {isOpen ? <ChevronUp size={14} className="opacity-50" /> : <ChevronDown size={14} className="opacity-50" />}
+                  </button>
+                )}
+                <div className={`space-y-0.5 ${!isOpen && !isCollapsed ? 'hidden' : 'block'} ${!isCollapsed ? 'ml-1 border-l pl-1 ' + (isLight ? 'border-gray-200' : 'border-gray-800') : ''}`}>
+                  {group.items.map(({ type, label, icon: Icon }) => {
+                    const isActive = !isDashboard && selected === type;
+                    const isAvailable = true;
+                    const cls = isAvailable
+                      ? `w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg transition-all text-sm ${isActive ? activeStyle : inactiveStyle}`
+                      : `w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg transition-all text-sm opacity-50 cursor-not-allowed ${inactiveStyle}`;
+                    return (
+                      <button
+                        key={type}
+                        onClick={isAvailable ? () => onSelect(type as DataStructureType) : undefined}
+                        className={cls}
+                        title={isAvailable ? label : 'Coming soon'}
+                      >
+                        <Icon size={17} className="shrink-0" />
+                        {!isCollapsed && <span>{label}</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         {/* Settings at bottom */}

@@ -2,6 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
 :root {
   --neon-cyan: #00f0ff;
   --neon-pink: #ff003c;
@@ -11,7 +13,7 @@
 
 body {
   margin: 0;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: 'Outfit', system-ui, -apple-system, sans-serif;
   background-color: var(--bg-dark);
   color: #e2e8f0;
   overflow: hidden;
@@ -23,9 +25,17 @@ html.light body {
   color: #111827;
 }
 
-html.light ::-webkit-scrollbar-track { background: #f1f5f9; }
-html.light ::-webkit-scrollbar-thumb { background: #cbd5e1; }
-html.light ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+html.light ::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+html.light ::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+}
+
+html.light ::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
 
 
 /* --- Custom Scrollbar --- */
@@ -33,13 +43,16 @@ html.light ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
   width: 6px;
   height: 6px;
 }
+
 ::-webkit-scrollbar-track {
   background: var(--bg-dark);
 }
+
 ::-webkit-scrollbar-thumb {
   background: #1e293b;
   border-radius: 3px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: #334155;
 }
@@ -48,8 +61,15 @@ html.light ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
 /* Dashboard Slide Up */
 @keyframes slide-up {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .animate-slide-up {
@@ -62,10 +82,12 @@ html.light ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     opacity: 0;
     transform: translateY(-20px) scale(0.9);
   }
+
   60% {
     opacity: 1;
     transform: translateY(5px) scale(1.02);
   }
+
   100% {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -76,10 +98,47 @@ html.light ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
   animation: popIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
 
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideOut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+
+.animate-slide-in {
+  animation: slideIn 0.2s ease-out forwards;
+}
+
+.animate-slide-out {
+  animation: slideOut 0.2s ease-in forwards;
+}
+
 /* --- Cyberpunk Utilities --- */
 
-.text-neon-cyan { color: var(--neon-cyan); text-shadow: 0 0 10px rgba(0, 240, 255, 0.5); }
-.text-neon-pink { color: var(--neon-pink); text-shadow: 0 0 10px rgba(255, 0, 60, 0.5); }
+.text-neon-cyan {
+  color: var(--neon-cyan);
+  text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+}
+
+.text-neon-pink {
+  color: var(--neon-pink);
+  text-shadow: 0 0 10px rgba(255, 0, 60, 0.5);
+}
 
 .cyber-card {
   background: rgba(15, 23, 42, 0.6);
@@ -101,9 +160,11 @@ html.light ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     transform: scale(0.5);
     opacity: 0;
   }
+
   50% {
     transform: scale(1.1);
   }
+
   100% {
     transform: scale(1);
     opacity: 1;
@@ -115,9 +176,11 @@ html.light ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     transform: scale(1);
     opacity: 1;
   }
+
   50% {
     transform: scale(1.1);
   }
+
   100% {
     transform: scale(0);
     opacity: 0;
@@ -125,9 +188,12 @@ html.light ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 }
 
 @keyframes search-animation {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: scale(1);
   }
+
   50% {
     transform: scale(1.1);
   }
@@ -138,10 +204,12 @@ html.light ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     transform: scale(1);
     box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
   }
+
   50% {
     transform: scale(1.15);
     box-shadow: 0 0 20px 10px rgba(16, 185, 129, 0.3);
   }
+
   100% {
     transform: scale(1);
     box-shadow: 0 0 30px 15px rgba(16, 185, 129, 0);
@@ -149,9 +217,12 @@ html.light ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 }
 
 @keyframes visiting-animation {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: scale(1);
   }
+
   50% {
     transform: scale(1.08);
   }
@@ -161,16 +232,20 @@ html.light ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
   from {
     opacity: 0.5;
   }
+
   to {
     opacity: 1;
   }
 }
 
 @keyframes pulse-animation {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: scale(1);
     opacity: 1;
   }
+
   50% {
     transform: scale(1.05);
     opacity: 0.9;
@@ -178,9 +253,12 @@ html.light ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 }
 
 @keyframes glow-animation {
-  0%, 100% {
+
+  0%,
+  100% {
     filter: drop-shadow(0 0 5px currentColor);
   }
+
   50% {
     filter: drop-shadow(0 0 20px currentColor);
   }
@@ -189,8 +267,13 @@ html.light ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 /* --- Modal Animations --- */
 
 @keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 .animate-fade-in {
@@ -202,6 +285,7 @@ html.light ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     opacity: 0;
     transform: scale(0.95);
   }
+
   to {
     opacity: 1;
     transform: scale(1);
@@ -213,18 +297,39 @@ html.light ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 }
 
 @keyframes minimap-float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-2px); }
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-2px);
+  }
 }
 
 @keyframes minimap-lens-glow {
-  0%, 100% { box-shadow: 0 0 0 rgba(255, 255, 255, 0.08); }
-  50% { box-shadow: 0 0 12px rgba(255, 255, 255, 0.2); }
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 rgba(255, 255, 255, 0.08);
+  }
+
+  50% {
+    box-shadow: 0 0 12px rgba(255, 255, 255, 0.2);
+  }
 }
 
 @keyframes minimap-center-breathe {
-  0%, 100% { transform: translate(-50%, -50%) scale(1); }
-  50% { transform: translate(-50%, -50%) scale(1.08); }
+
+  0%,
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+
+  50% {
+    transform: translate(-50%, -50%) scale(1.08);
+  }
 }
 
 .minimap-float {
@@ -237,4 +342,53 @@ html.light ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
 .minimap-center {
   animation: minimap-center-breathe 3.6s ease-in-out infinite;
+}
+
+/* --- Loading Screen Animations --- */
+
+@keyframes scan {
+  0% {
+    transform: translateY(-100%);
+  }
+
+  100% {
+    transform: translateY(50%);
+  }
+}
+
+.animate-scan {
+  animation: scan 3s linear infinite;
+}
+
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.6s ease-out forwards;
+  opacity: 0;
 }

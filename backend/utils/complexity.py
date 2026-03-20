@@ -79,11 +79,26 @@ class ComplexityTracker:
             'delete': 'O(log n)',
             'search': 'O(log n)'
         },
+        'red_black_tree': {
+            'insert': 'O(log n)',
+            'delete': 'O(log n)',
+            'search': 'O(log n)'
+        },
         'graph': {
             'add_vertex': 'O(1)',
             'add_edge': 'O(1)',
             'insert': 'O(1)',
             'search': 'O(V + E)'
+        },
+        'trie': {
+            'insert': 'O(L)',
+            'delete': 'O(L)',
+            'search': 'O(L)'
+        },
+        'segment_tree': {
+            'build': 'O(n)',
+            'range_query': 'O(log n)',
+            'point_update': 'O(log n)'
         }
     }
 

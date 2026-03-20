@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { DataStructureType, ApiResponse } from '../types/dataStructures';
 
 // src/hooks/useDataStructure.ts
-const API_URL = 'http://127.0.0.1:5000/api'; // Ensure this matches your Flask port
+const API_URL = '/api'; // Uses Vite proxy
 
 export const useDataStructure = (type: DataStructureType) => {
   const [state, setState] = useState<any>(null);
@@ -56,6 +56,10 @@ export const useDataStructure = (type: DataStructureType) => {
   const search = useCallback((value: number) => performOperation('search', { value }), [performOperation]);
   const addRandom = useCallback((count: number = 7) => performOperation('add_random', { count }), [performOperation]);
   const addEdge = useCallback((from: number, to: number, weight: number = 1) => performOperation('add_edge', { from, to, weight }), [performOperation]);
+  const setHashMode = useCallback((mode: 'linear' | 'quadratic' | 'double') => performOperation('set_mode', { mode }), [performOperation]);
+  const buildSegment = useCallback((array: number[]) => performOperation('build', { array }), [performOperation]);
+  const rangeQuerySegment = useCallback((l: number, r: number, op: 'sum' | 'min' | 'max' = 'sum') => performOperation('range_query', { l, r, op }), [performOperation]);
+  const pointUpdateSegment = useCallback((idx: number, val: number) => performOperation('point_update', { idx, val }), [performOperation]);
 
   const clear = useCallback(async () => {
     performOperation('clear').then(() => setState(null));
@@ -104,6 +108,8 @@ export const useDataStructure = (type: DataStructureType) => {
   return {
     state, loading, error,
     insert, deleteValue, search, addRandom, addEdge, clear, getState,
+    setHashMode,
+    buildSegment, rangeQuerySegment, pointUpdateSegment,
     undo, redo, // Undo/Redo
     reverse, getMiddle, detectCycle, removeDuplicates, // Linked List operations
     peek, changePriority,

@@ -104,8 +104,39 @@ class DoubleEndedQueue(DataStructureBase):
         self.clear_steps()
         if not self.items or len(self.items) < 2:
             return {'success': False, 'message': 'Deque too short to reverse', 'steps': self.steps}
-            
-        self.add_step("Starting reverse operation", self.to_dict())
-        self.items.reverse()
-        self.add_step("Reversed deque", self.to_dict())
+
+        items_list = list(self.items)
+        n = len(items_list)
+        total_swaps = n // 2
+        midpoint = n // 2 if n % 2 == 1 else -1  # -1 means no single midpoint
+
+        self.add_step("Starting reverse operation", {
+            **self.to_dict(),
+            'subPhase': 'initial',
+            'totalSwaps': total_swaps,
+            'midpoint': midpoint,
+        })
+
+        for s in range(total_swaps):
+            i = s
+            j = n - 1 - s
+            # Swap step
+            self.add_step(
+                f"Swapping elements at indices i={i} and j={j}. Elements cross at central axis ({items_list[midpoint] if midpoint >= 0 else 'center'}).",
+                {
+                    **self.to_dict(),
+                    'subPhase': 'swap',
+                    'swapPair': [i, j],
+                    'swapIndex': s + 1,
+                    'totalSwaps': total_swaps,
+                    'midpoint': midpoint,
+                }
+            )
+            # Actually swap in internal state
+            self.items[i], self.items[j] = self.items[j], self.items[i]
+
+        self.add_step("Reverse complete", {
+            **self.to_dict(),
+            'subPhase': 'complete',
+        })
         return {'success': True, 'steps': self.steps, 'state': self.to_dict()}

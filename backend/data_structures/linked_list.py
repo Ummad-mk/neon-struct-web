@@ -100,20 +100,52 @@ class SinglyLinkedList(DataStructureBase):
         prev = None
         current = self.head
         idx = 0
-        self.add_step("Starting reverse operation", {**self.to_dict(), 'reversing': [0]})
+        original_state = self.to_dict()
+        reversed_conns = []
+        node0_flipped = False
+        
+        self.add_step("Starting reverse operation", {**original_state, 'pointers': {}, 'subPhase': 'initial', 'reversed_conns': list(reversed_conns), 'node0_flipped': node0_flipped, 'head_pos': 0})
         
         while current:
             next_node = current.next
-            self.add_step(f"Reversing node at index {idx}", {**self.to_dict(), 'reversing': [idx], 'highlight': idx})
+            pointers = {'curr': idx}
+            if prev is not None: pointers['prev'] = idx - 1
+            if next_node is not None: pointers['next'] = idx + 1
+
+            # Step 1: Spotlight
+            self.add_step(f"Spotlight node {idx}", {**original_state, 'pointers': pointers, 'subPhase': 'spotlight', 'reversed_conns': list(reversed_conns), 'node0_flipped': node0_flipped, 'head_pos': 0})
+            
+            # Step 2: Redirect
+            self.add_step(f"Redirect node {idx}", {**original_state, 'pointers': pointers, 'subPhase': 'redirect', 'reversed_conns': list(reversed_conns), 'node0_flipped': node0_flipped, 'head_pos': 0})
+
+            # Step 3: Flip
             current.next = prev
-            if prev:
-                self.add_step(f"Link reversed: {current.value} now points to {prev.value}", {**self.to_dict(), 'reversing': [idx], 'swapping': [idx]})
+            if idx == 0:
+                node0_flipped = True
+            else:
+                reversed_conns.append(idx - 1)
+            
+            self.add_step(f"Flip arrow at node {idx}", {**original_state, 'pointers': pointers, 'subPhase': 'flip', 'reversed_conns': list(reversed_conns), 'node0_flipped': node0_flipped, 'head_pos': 0})
+            
+            # Step 4: Step forward
             prev = current
             current = next_node
             idx += 1
+            
+            if current:
+                next_pointers = {'curr': idx, 'prev': idx - 1}
+                if current.next is not None: next_pointers['next'] = idx + 1
+                self.add_step(f"Pointers step forward", {
+                    **original_state, 
+                    'pointers': next_pointers, 
+                    'subPhase': 'step', 
+                    'reversed_conns': list(reversed_conns),
+                    'node0_flipped': node0_flipped,
+                    'head_pos': 0
+                })
         
         self.head = prev
-        self.add_step("Reverse complete - new head set", self.to_dict())
+        self.add_step("Reverse complete", {**self.to_dict(), 'pointers': {}, 'subPhase': 'complete', 'reversed_conns': list(reversed_conns), 'node0_flipped': node0_flipped, 'head_pos': idx - 1})
         return {'success': True, 'steps': self.steps, 'state': self.to_dict()}
 
     def get_middle(self) -> Dict:
@@ -288,19 +320,42 @@ class DoublyLinkedList(DataStructureBase):
         current = self.head
         temp = None
         idx = 0
-        self.add_step("Starting reverse operation", {**self.to_dict(), 'reversing': [0]})
+        original_state = self.to_dict()
+        reversed_conns = []
+        node0_flipped = False
+        
+        self.add_step("Starting reverse operation", {**original_state, 'pointers': {}, 'subPhase': 'initial', 'reversed_conns': list(reversed_conns), 'node0_flipped': node0_flipped, 'head_pos': 0})
         
         while current:
+            pointers = {'curr': idx}
+            if current.prev is not None: pointers['prev'] = idx - 1
+            if current.next is not None: pointers['next'] = idx + 1
+            
+            self.add_step(f"Spotlight node {idx}", {**original_state, 'pointers': pointers, 'subPhase': 'spotlight', 'reversed_conns': list(reversed_conns), 'node0_flipped': node0_flipped, 'head_pos': 0})
+            self.add_step(f"Redirect node {idx}", {**original_state, 'pointers': pointers, 'subPhase': 'redirect', 'reversed_conns': list(reversed_conns), 'node0_flipped': node0_flipped, 'head_pos': 0})
+
             temp = current.prev
             current.prev = current.next
             current.next = temp
-            self.add_step(f"Swapping pointers for node at index {idx}", {**self.to_dict(), 'reversing': [idx], 'highlight': idx})
+            
+            if idx == 0:
+                node0_flipped = True
+            else:
+                reversed_conns.append(idx - 1)
+
+            self.add_step(f"Flip arrow at node {idx}", {**original_state, 'pointers': pointers, 'subPhase': 'flip', 'reversed_conns': list(reversed_conns), 'node0_flipped': node0_flipped, 'head_pos': 0})
+            
             current = current.prev 
             idx += 1
+            
+            if current:
+                next_pointers = {'curr': idx, 'prev': idx - 1}
+                if current.next is not None: next_pointers['next'] = idx + 1
+                self.add_step(f"Pointers step forward", {**original_state, 'pointers': next_pointers, 'subPhase': 'step', 'reversed_conns': list(reversed_conns), 'node0_flipped': node0_flipped, 'head_pos': 0})
         
         if temp:
             self.tail = self.head
             self.head = temp.prev
         
-        self.add_step("Reverse complete - head and tail swapped", self.to_dict())
+        self.add_step("Reverse complete", {**self.to_dict(), 'pointers': {}, 'subPhase': 'complete', 'reversed_conns': list(reversed_conns), 'node0_flipped': node0_flipped, 'head_pos': idx - 1})
         return {'success': True, 'steps': self.steps, 'state': self.to_dict()}

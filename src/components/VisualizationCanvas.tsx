@@ -4,7 +4,17 @@ import { LinkedListViz } from './visualizations/LinkedListViz';
 import { StackViz } from './visualizations/StackViz';
 import { QueueViz } from './visualizations/QueueViz';
 import { TreeViz } from './visualizations/TreeViz';
+import { HeapViz } from './visualizations/HeapViz';
+import { HashTableViz } from './visualizations/HashTableViz';
+import { TrieViz } from './visualizations/TrieViz';
+import { SegmentTreeViz } from './visualizations/SegmentTreeViz';
+import { RedBlackTreeViz } from './visualizations/RedBlackTreeViz';
 import { GraphViz } from './visualizations/GraphViz';
+import { BubbleSortViz } from './visualizations/BubbleSortViz';
+import { SelectionSortViz } from './visualizations/SelectionSortViz';
+import { InsertionSortViz } from './visualizations/InsertionSortViz';
+import { MergeSortViz } from './visualizations/MergeSortViz';
+import { QuickSortViz } from './visualizations/QuickSortViz';
 import { ANIMATION_TIMINGS } from '../utils/colors';
 import { useTheme } from '../contexts/ThemeContext';
 import {
@@ -28,6 +38,10 @@ interface Props {
   onInsert: (val: number, position?: string) => Promise<any>;
   onDelete: (val?: number | string) => Promise<any>;
   onSearch: (val: number) => Promise<any>;
+  onSetHashMode?: (mode: 'linear' | 'quadratic' | 'double') => Promise<any>;
+  onBuildSegment?: (array: number[]) => Promise<any>;
+  onRangeQuerySegment?: (l: number, r: number, op: 'sum' | 'min' | 'max') => Promise<any>;
+  onPointUpdateSegment?: (idx: number, val: number) => Promise<any>;
   onAddRandom: () => Promise<any>;
   onAddEdge?: (u: number, v: number, w: number) => Promise<any>;
   onClear: () => void;
@@ -48,15 +62,19 @@ interface Props {
   onTopologicalSort?: () => Promise<any>;
   onMinimumSpanningTree?: () => Promise<any>;
   onKruskalsMST?: () => Promise<any>;
+  onViewCode?: (mode: 'full' | 'current') => void;
+  onViewPseudoCode?: (mode: 'full' | 'current') => void;
+  onViewAlgorithm?: (mode: 'full' | 'current') => void;
 }
 
 export function VisualizationCanvas({
   dsType, state, viewport, onViewportChange, onMinimapUpdate,
-  onInsert, onDelete, onSearch, onAddRandom, onAddEdge, onClear,
+  onInsert, onDelete, onSearch, onSetHashMode, onBuildSegment, onRangeQuerySegment, onPointUpdateSegment, onAddRandom, onAddEdge, onClear,
   onReverse, onGetMiddle, onDetectCycle, onRemoveDuplicates,
   onTraverse, onFindMinMax, onFindSuccessorPredecessor, onGetHeight,
   onCountNodes, onRangeSearch, onLowestCommonAncestor,
-  onDeleteEdge, onFindPath, onShortestPath, onTopologicalSort, onMinimumSpanningTree, onKruskalsMST
+  onDeleteEdge, onFindPath, onShortestPath, onTopologicalSort, onMinimumSpanningTree, onKruskalsMST,
+  onViewCode, onViewPseudoCode, onViewAlgorithm
 }: Props) {
   const { theme, animationSpeed } = useTheme();
   const isLight = theme === 'light';
@@ -89,10 +107,24 @@ export function VisualizationCanvas({
   const [deletePhase, setDeletePhase] = useState<'highlight' | 'fadeOut'>('highlight');
   const [insertingNode, setInsertingNode] = useState<number | undefined>(undefined);
   const [reversingNodes, setReversingNodes] = useState<number[]>([]);
+  const [reverseSnapshot, setReverseSnapshot] = useState<number[] | null>(null);
+  const [swappingNodes, setSwappingNodes] = useState<number[]>([]);
+  const [reverseSteps, setReverseSteps] = useState<any[] | null>(null);
+  const [reverseSwapIndex, setReverseSwapIndex] = useState<number>(-1);
   const [highlightedEdges, setHighlightedEdges] = useState<any[]>([]);
   const [cycleEdgesActive, setCycleEdgesActive] = useState(false);
+  const [treeTargetNode, setTreeTargetNode] = useState<number | undefined>(undefined);
+  const [treeSuccessorNode, setTreeSuccessorNode] = useState<number | undefined>(undefined);
+  const [treeStatusBadge, setTreeStatusBadge] = useState<string | undefined>(undefined);
+  const [treeComparingNodes, setTreeComparingNodes] = useState<{ parent: number; child: number } | undefined>(undefined);
+  const [treeComparisonText, setTreeComparisonText] = useState<string | undefined>(undefined);
+  const [treeInsertCarrier, setTreeInsertCarrier] = useState<{ from: number; to: number; value: number } | undefined>(undefined);
+  const [treeTraversalResult, setTreeTraversalResult] = useState<{ type: string; values: string } | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
   const [statusMsg, setStatusMsg] = useState<string>('');
+
+  // Local state override for cinematic step playback
+  const [localState, setLocalState] = useState<any>(null);
 
   // Drag/pan
   const containerRef = useRef<HTMLDivElement>(null);
@@ -100,6 +132,14 @@ export function VisualizationCanvas({
   const lastMouse = useRef({ x: 0, y: 0 });
 
   useEffect(() => { clearAnimationState(); }, [dsType]);
+
+  // Sync local state when parent prop updates (and not animating)
+  useEffect(() => {
+    if (!isAnimating) {
+      setLocalState(state);
+    }
+  }, [state, isAnimating]);
+
   useEffect(() => {
     onMinimapUpdate?.({
       visited,
@@ -109,18 +149,47 @@ export function VisualizationCanvas({
       insertingNode,
       deletingNode,
     });
-  }, [visited, found, highlight, operation, insertingNode, deletingNode, onMinimapUpdate]);
+  }, [visited, found, highlight, operation, insertingNode, deletingNode, onMinimapUpdate, setLocalState]);
 
   const clearAnimationState = () => {
     setVisited([]); setFound(undefined); setHighlight(undefined);
     setOperation(null); setDeletingNode(undefined); setInsertingNode(undefined);
-    setReversingNodes([]); setHighlightedEdges([]); setCycleEdgesActive(false); setIsAnimating(false); setStatusMsg('');
+    setReversingNodes([]); setReverseSnapshot(null); setSwappingNodes([]); setHighlightedEdges([]); setCycleEdgesActive(false); setIsAnimating(false); setStatusMsg('');
+    setTreeTargetNode(undefined); setTreeSuccessorNode(undefined); setTreeStatusBadge(undefined);
+    setTreeComparingNodes(undefined); setTreeComparisonText(undefined); setTreeInsertCarrier(undefined);
+    setTreeTraversalResult(null);
     setDeletePhase('highlight');
+    setReverseSteps(null); setReverseSwapIndex(-1);
+    setLocalState(null); // Return to parent state
   };
 
   // --- Animation helpers ---
 
-  const animateSearch = async (steps: any[], _success: boolean) => {
+  const getTreeNodeByValue = (node: any, value: number): any | null => {
+    if (!node) return null;
+    if (node.value === value) return node;
+    return getTreeNodeByValue(node.left, value) || getTreeNodeByValue(node.right, value);
+  };
+
+  const getTreeDecision = (tree: any, current: number, target: number) => {
+    const currentNode = getTreeNodeByValue(tree, current);
+    if (!currentNode) return null;
+    if (target < current && currentNode.left) {
+      return {
+        nodes: { parent: current, child: currentNode.left.value },
+        text: `${target} < ${current}`,
+      };
+    }
+    if (target > current && currentNode.right) {
+      return {
+        nodes: { parent: current, child: currentNode.right.value },
+        text: `${target} > ${current}`,
+      };
+    }
+    return null;
+  };
+
+  const animateSearch = async (steps: any[], _success: boolean, targetValue?: number) => {
     setIsAnimating(true);
     setOperation('search');
     setVisited([]);
@@ -128,6 +197,33 @@ export function VisualizationCanvas({
     setHighlight(undefined);
 
     if (!steps || steps.length === 0) { setIsAnimating(false); setOperation(null); return; }
+
+    if (dsType === 'bst' || dsType === 'avl' || dsType === 'red_black_tree') {
+      for (const step of steps) {
+        const stepState = step.state || {};
+        if (stepState.tree) setLocalState(stepState);
+        setVisited(stepState.visited || []);
+        setHighlight(stepState.highlight);
+        setFound(stepState.found);
+        setTreeComparingNodes(undefined);
+        setTreeComparisonText(undefined);
+        const stepCurrent = stepState.highlight;
+        if (targetValue !== undefined && stepCurrent !== undefined && stepState.found === undefined) {
+          const decision = getTreeDecision(stepState.tree, stepCurrent, targetValue);
+          if (decision) {
+            setTreeComparingNodes(decision.nodes);
+            setTreeComparisonText(decision.text);
+          }
+        }
+        setStatusMsg(step.description || step.message || '');
+        await new Promise(r => setTimeout(r, T(520)));
+      }
+      setTreeComparingNodes(undefined);
+      setTreeComparisonText(undefined);
+      setIsAnimating(false);
+      setOperation(null);
+      return;
+    }
 
     // Reconstruct a flat list of nodes to visit in order, just in case steps were batched
     const fullPath: number[] = [];
@@ -214,6 +310,119 @@ export function VisualizationCanvas({
     setOperation(null);
   };
 
+  const animateTreeInsert = async (steps: any[], insertValue: number, finalState?: any) => {
+    setIsAnimating(true);
+    setOperation('insert');
+    setVisited([]);
+    setHighlight(undefined);
+    setFound(undefined);
+    setInsertingNode(undefined);
+    setTreeComparingNodes(undefined);
+    setTreeComparisonText(undefined);
+    setTreeInsertCarrier(undefined);
+
+    for (const step of steps || []) {
+      const stepState = step.state || {};
+      if (stepState.tree) setLocalState(stepState);
+      setVisited(stepState.visited || []);
+      setHighlight(stepState.highlight);
+
+      const stepText = step.description || step.message || '';
+      const current = stepState.highlight;
+      if (current !== undefined && stepState.found === undefined) {
+        const decision = getTreeDecision(stepState.tree, current, insertValue);
+        if (decision) {
+          setTreeComparingNodes(decision.nodes);
+          setTreeComparisonText(decision.text);
+          setTreeInsertCarrier({ from: decision.nodes.parent, to: decision.nodes.child, value: insertValue });
+          setStatusMsg(stepText || `Comparing ${decision.text}`);
+          await new Promise(r => setTimeout(r, T(460)));
+          setTreeInsertCarrier(undefined);
+          continue;
+        }
+      }
+      setStatusMsg(stepText || 'Finding insert position…');
+      await new Promise(r => setTimeout(r, T(420)));
+    }
+
+    setTreeComparingNodes(undefined);
+    setTreeComparisonText(undefined);
+    setTreeInsertCarrier(undefined);
+    if (finalState?.tree) setLocalState(finalState);
+    setInsertingNode(insertValue);
+    setStatusMsg('Landing node…');
+    await new Promise(r => setTimeout(r, T(ANIMATION_TIMINGS.insert)));
+
+    const hasRotation = (steps || []).some((s: any) => {
+      const text = (s?.description || s?.message || '').toLowerCase();
+      return text.includes('rotation');
+    });
+    if (hasRotation) {
+      setStatusMsg('Adjusting tree positions…');
+      await new Promise(r => setTimeout(r, T(520)));
+    }
+
+    clearAnimationState();
+  };
+
+  const animateTreeDelete = async (steps: any[], targetValue: number) => {
+    setIsAnimating(true);
+    setOperation('delete');
+    setTreeTargetNode(undefined);
+    setTreeSuccessorNode(undefined);
+    setTreeStatusBadge(undefined);
+    setTreeComparingNodes(undefined);
+    setTreeComparisonText(undefined);
+    let hadSwap = false;
+
+    for (const step of steps) {
+      const stepState = step.state || {};
+      if (stepState.tree) setLocalState(stepState);
+      setVisited(stepState.visited || []);
+      setHighlight(stepState.highlight);
+      setFound(stepState.found);
+      setDeletingNode(undefined);
+      setTreeComparingNodes(undefined);
+      setTreeComparisonText(undefined);
+
+      const stepText = step.description || step.message || '';
+      const replacedMatch = typeof stepText === 'string'
+        ? stepText.match(/Replaced\s+(-?\d+)\s+with successor\s+(-?\d+)/i)
+        : null;
+
+      if (replacedMatch) {
+        hadSwap = true;
+        const target = Number(replacedMatch[1]);
+        const successor = Number(replacedMatch[2]);
+        setTreeTargetNode(target);
+        setTreeSuccessorNode(successor);
+        setTreeStatusBadge('SWAP_PENDING');
+        setStatusMsg(`Swapping ${target} with successor ${successor}…`);
+        await new Promise(r => setTimeout(r, T(1150)));
+        setTreeStatusBadge('SWAP_APPLIED');
+      } else {
+        const current = stepState.highlight;
+        if (targetValue !== undefined && current !== undefined && stepState.found === undefined) {
+          const decision = getTreeDecision(stepState.tree, current, targetValue);
+          if (decision) {
+            setTreeComparingNodes(decision.nodes);
+            setTreeComparisonText(decision.text);
+          }
+        }
+        if (typeof stepText === 'string' && stepText.toLowerCase().includes('deleting node')) {
+          setDeletingNode(stepState.found ?? stepState.highlight);
+        }
+        setStatusMsg(stepText || 'Deleting…');
+        await new Promise(r => setTimeout(r, T(520)));
+      }
+    }
+
+    if (hadSwap) {
+      await new Promise(r => setTimeout(r, T(260)));
+    }
+    clearAnimationState();
+  };
+
   const animateInsert = async (nodeIndex?: number) => {
     setIsAnimating(true);
     setOperation('insert');
@@ -262,6 +471,30 @@ export function VisualizationCanvas({
     clearAnimationState();
   };
 
+  const playHashTableSteps = async (result: any, op: 'insert' | 'search' | 'delete') => {
+    if (!result) return result;
+    if (result?.steps?.length > 0) {
+      setIsAnimating(true);
+      setOperation(op);
+      setVisited([]);
+      setFound(undefined);
+      setHighlight(undefined);
+      for (const step of result.steps) {
+        const stepState = step.state || {};
+        setLocalState(stepState);
+        if (stepState.highlight_bucket !== undefined && stepState.highlight_bucket !== null) {
+          setHighlight(stepState.highlight_bucket);
+        }
+        setStatusMsg(step.description || step.message || '');
+        await new Promise(r => setTimeout(r, T(op === 'search' ? 520 : 460)));
+      }
+      clearAnimationState();
+      return result;
+    }
+    clearAnimationState();
+    return result;
+  };
+
   // --- Handlers ---
 
   const handleInsert = async (position?: string) => {
@@ -269,6 +502,14 @@ export function VisualizationCanvas({
     if (isNaN(val)) return;
     setInputValue('');
     const result = await onInsert(val, position);
+    if (dsType === 'bst' || dsType === 'avl' || dsType === 'red_black_tree') {
+      if (result?.success) {
+        await animateTreeInsert(result?.steps || [], val, result?.state);
+      } else {
+        clearAnimationState();
+      }
+      return;
+    }
     if (result?.success && result.state) {
       const nodes = result.state.nodes || result.state.items || [];
       if (nodes.length > 0) await animateInsert(position === 'front' ? 0 : nodes.length - 1);
@@ -301,6 +542,16 @@ export function VisualizationCanvas({
     }
     if (val === undefined || isNaN(val)) return;
 
+    if (dsType === 'bst' || dsType === 'avl' || dsType === 'red_black_tree') {
+      const result = await onDelete(val);
+      if (result?.success && result?.steps?.length) {
+        await animateTreeDelete(result.steps, val);
+      } else {
+        clearAnimationState();
+      }
+      return;
+    }
+
     let nodeIndex: number | undefined;
     let searchPath: number[] = [];
     if (state?.nodes) {
@@ -329,12 +580,48 @@ export function VisualizationCanvas({
     if (isNaN(val)) return;
     const result = await onSearch(val);
     if (result?.steps?.length > 0) {
-      await animateSearch(result.steps, result.success);
+      await animateSearch(result.steps, result.success, val);
     } else if (result?.found !== undefined) {
       setFound(result.found);
       await new Promise(r => setTimeout(r, T(ANIMATION_TIMINGS.found)));
       clearAnimationState();
     }
+  };
+
+  const handleHashTableInsert = async (val: number) => {
+    const result = await onInsert(val);
+    await playHashTableSteps(result, 'insert');
+    return result;
+  };
+
+  const handleHashTableSearch = async (val: number) => {
+    const result = await onSearch(val);
+    await playHashTableSteps(result, 'search');
+    return result;
+  };
+
+  const handleHashTableDelete = async (val: number) => {
+    const result = await onDelete(val);
+    await playHashTableSteps(result, 'delete');
+    return result;
+  };
+
+  const handleTrieInsert = async (word: string) => {
+    const result = await onInsert(word as unknown as number);
+    await playHashTableSteps(result, 'insert');
+    return result;
+  };
+
+  const handleTrieSearch = async (word: string) => {
+    const result = await onSearch(word as unknown as number);
+    await playHashTableSteps(result, 'search');
+    return result;
+  };
+
+  const handleTrieDelete = async (word: string) => {
+    const result = await onDelete(word as unknown as number);
+    await playHashTableSteps(result, 'delete');
+    return result;
   };
 
   const handleAddEdge = async () => {
@@ -349,18 +636,74 @@ export function VisualizationCanvas({
 
   const handleReverse = async () => {
     if (!onReverse) return;
-    setOperation('reverse'); setIsAnimating(true);
-    if (state?.nodes) setReversingNodes(state.nodes.map((_: any, i: number) => i));
-    await onReverse();
-    await new Promise(r => setTimeout(r, T(ANIMATION_TIMINGS.insert)));
+
+    const isStackOrQueue = dsType === 'stack' || dsType === 'queue';
+    const itemsBeforeReverse: number[] = isStackOrQueue && Array.isArray(state?.items) ? [...state.items] : [];
+    if (isStackOrQueue) {
+      setReverseSnapshot(itemsBeforeReverse);
+    }
+
+    setLocalState(state); // Lock the visual state before the backend modifies it
+    setOperation('reverse');
+    setIsAnimating(true);
+    setStatusMsg(`Reversing ${dsType.replace(/_/g, ' ')}…`);
+
+    const result = await onReverse();
+
+    if (result && result.steps && result.steps.length > 0) {
+      if (dsType === 'singly_linked_list' || dsType === 'doubly_linked_list') {
+        // Cinematic playback for Linked Lists (Spotlight -> Redirect -> Flip -> Step)
+        for (const step of result.steps) {
+          if (step.subPhase || step.state?.subPhase) {
+            const stepState = step.state || step;
+            setLocalState(stepState); // Drive visualization with frame data
+
+            // Dynamic timings depending on phase to match exact user reqs
+            let delay = 800;
+            if (stepState.subPhase === 'spotlight') delay = 900;
+            else if (stepState.subPhase === 'redirect') delay = 700;
+            else if (stepState.subPhase === 'flip') delay = 800;
+            else if (stepState.subPhase === 'step') delay = 400;
+
+            await new Promise(r => setTimeout(r, T(delay)));
+          }
+        }
+      }
+    }
+
+    // Deque uses swap-based reverse animation
+    if (dsType === 'deque' && result && result.steps && result.steps.length > 0) {
+      const swapSteps = result.steps.filter((s: any) => (s.state?.subPhase || s.subPhase) === 'swap');
+      if (swapSteps.length > 0) {
+        setReverseSteps(swapSteps);
+        for (let i = 0; i < swapSteps.length; i++) {
+          setReverseSwapIndex(i);
+          setStatusMsg(swapSteps[i].message || `Swap ${i + 1} of ${swapSteps.length}`);
+          await new Promise(r => setTimeout(r, T(1400))); // slightly longer than SWAP_DURATION_MS
+        }
+      }
+    }
+
+    // Fallback/original logic for Stack/Queue which handle their own reverse animation timelines
+    if (isStackOrQueue) {
+      const ELEMENT_DURATION_MS = 520;
+      const totalAnimMs = itemsBeforeReverse.length * ELEMENT_DURATION_MS + 500;
+      await new Promise(r => setTimeout(r, totalAnimMs));
+    }
+
     clearAnimationState();
   };
 
   const handleTreeTraverse = async (type: string) => {
     if (!onTraverse) return;
+    setTreeTraversalResult(null);
     setOperation('traverse'); setIsAnimating(true);
     const result = await onTraverse(type);
     if (result && result.steps) await animateSearch(result.steps, result.success);
+    if (result && result.result) {
+      setTreeTraversalResult({ type, values: result.result.join(' ') });
+      setTimeout(() => setTreeTraversalResult(null), 4000);
+    }
     clearAnimationState();
   };
 
@@ -443,14 +786,79 @@ export function VisualizationCanvas({
 
   // Visualization render
   const renderVisualization = () => {
-    if (!state) return (
-      <div className="flex-1 flex items-center justify-center">
-        <div className="text-center">
-          <p className={`text-2xl mb-2 font-mono ${isLight ? 'text-gray-300' : 'text-gray-600'}`}>No Data</p>
-          <p className={`text-sm ${isLight ? 'text-gray-400' : 'text-gray-500'}`}>Use the controls below to add elements</p>
+    if (!state) {
+      if (dsType === 'hash_table') {
+        return <HashTableViz
+          data={{}}
+          operation={operation}
+          minimapMeta={{ visited, found, highlight, operation, insertingNode, deletingNode }}
+          onInsert={handleHashTableInsert}
+          onSearch={handleHashTableSearch}
+          onDelete={handleHashTableDelete}
+          onSetHashMode={onSetHashMode}
+          onAddRandom={onAddRandom}
+          onClear={onClear}
+          isAnimating={isAnimating}
+        />;
+      }
+      if (dsType === 'trie') {
+        return <TrieViz
+          data={{}}
+          onInsert={handleTrieInsert}
+          onSearch={handleTrieSearch}
+          onDelete={handleTrieDelete}
+          onClear={onClear}
+          onViewCode={onViewCode}
+          onViewPseudoCode={onViewPseudoCode}
+          onViewAlgorithm={onViewAlgorithm}
+          isAnimating={isAnimating}
+        />;
+      }
+      if (dsType === 'segment_tree') {
+        return <SegmentTreeViz
+          data={{}}
+          onBuild={onBuildSegment}
+          onRangeQuery={onRangeQuerySegment}
+          onPointUpdate={onPointUpdateSegment}
+          onAddRandom={onAddRandom}
+          onClear={onClear}
+          onViewCode={onViewCode}
+          onViewPseudoCode={onViewPseudoCode}
+          onViewAlgorithm={onViewAlgorithm}
+          isAnimating={isAnimating}
+        />;
+      }
+      if (dsType === 'red_black_tree') {
+        return <RedBlackTreeViz
+          data={{}}
+          onInsert={async (val) => onInsert(val)}
+          onDelete={async (val) => onDelete(val)}
+          onSearch={async (val) => onSearch(val)}
+          onAddRandom={onAddRandom}
+          onClear={onClear}
+          onViewCode={onViewCode}
+          onViewPseudoCode={onViewPseudoCode}
+          onViewAlgorithm={onViewAlgorithm}
+          isAnimating={isAnimating}
+        />;
+      }
+      return (
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <p className={`text-2xl mb-2 font-mono ${isLight ? 'text-gray-300' : 'text-gray-600'}`}>No Data</p>
+            <p className={`text-sm ${isLight ? 'text-gray-400' : 'text-gray-500'}`}>Use the controls below to add elements</p>
         </div>
+
+        {/* Tree Traversal Result Message */}
+        {treeTraversalResult && (dsType === 'bst' || dsType === 'avl') && (
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 mt-32 px-6 py-3 rounded-xl text-lg font-mono bg-[#0a1120]/95 border border-indigo-500/50 shadow-lg shadow-indigo-500/20">
+            <span className="text-indigo-400 font-semibold capitalize">{treeTraversalResult.type} traversal = </span>
+            <span className="text-white">{treeTraversalResult.values}</span>
+          </div>
+        )}
       </div>
-    );
+      );
+    }
     const normalizeValue = (val: any) => {
       if (typeof val === 'number') return val;
       if (typeof val === 'string') {
@@ -525,17 +933,78 @@ export function VisualizationCanvas({
 
     const vizProps = { data: state, visited, found, highlight };
     switch (dsType) {
-      case 'singly_linked_list': return <LinkedListViz {...vizProps} type="singly" operation={operation} reversingNodes={reversingNodes} deletingNode={deletingNode} deletePhase={deletePhase} insertingNode={insertingNode} />;
-      case 'doubly_linked_list': return <LinkedListViz {...vizProps} type="doubly" operation={operation} reversingNodes={reversingNodes} deletingNode={deletingNode} deletePhase={deletePhase} insertingNode={insertingNode} />;
-      case 'stack': return <StackViz {...vizProps} operation={operation} />;
-      case 'queue': case 'deque': return <QueueViz {...vizProps} type={dsType === 'deque' ? 'deque' : 'queue'} operation={operation} insertingNode={insertingNode} deletingNode={deletingNode} />;
-      case 'priority_queue': return <QueueViz {...vizProps} type="priority_queue" operation={operation} insertingNode={insertingNode} deletingNode={deletingNode} />;
-      case 'bst': case 'avl': return <TreeViz {...vizProps} operation={operation} insertingNode={insertingNode} deletingNode={deletingNode} />;
+      case 'singly_linked_list': return <LinkedListViz {...vizProps} data={localState || state} type="singly" operation={operation} reversingNodes={reversingNodes} deletingNode={deletingNode} deletePhase={deletePhase} insertingNode={insertingNode} swappingNodes={swappingNodes} />;
+      case 'doubly_linked_list': return <LinkedListViz {...vizProps} data={localState || state} type="doubly" operation={operation} reversingNodes={reversingNodes} deletingNode={deletingNode} deletePhase={deletePhase} insertingNode={insertingNode} swappingNodes={swappingNodes} />;
+      case 'stack': return <StackViz {...vizProps} operation={operation} reverseSnapshot={reverseSnapshot} />;
+      case 'queue': case 'deque': return <QueueViz {...vizProps} type={dsType === 'deque' ? 'deque' : 'queue'} operation={operation} insertingNode={insertingNode} deletingNode={deletingNode} reverseSnapshot={reverseSnapshot} reverseSteps={reverseSteps} reverseSwapIndex={reverseSwapIndex} />;
+      case 'priority_queue': return <HeapViz data={localState || state} operation={operation} />;
+      case 'bst': case 'avl': return <TreeViz {...vizProps} data={localState || state} operation={operation} insertingNode={insertingNode} deletingNode={deletingNode} targetNode={treeTargetNode} successorNode={treeSuccessorNode} statusBadge={treeStatusBadge} comparingNodes={treeComparingNodes} comparisonText={treeComparisonText} insertionCarrier={treeInsertCarrier} />;
       case 'graph':
       case 'directed_graph': {
         const graphData = normalizeGraphData(state);
         return <GraphViz data={graphData as any} visited={visited} found={found} operation={operation} insertingNode={insertingNode} deletingNode={deletingNode} highlightedEdges={highlightedEdges} cycleEdgesActive={cycleEdgesActive} />;
       }
+      case 'hash_table':
+        return <HashTableViz 
+          data={localState || state} 
+          operation={operation} 
+          minimapMeta={{ visited, found, highlight, operation, insertingNode, deletingNode }} 
+          onInsert={handleHashTableInsert}
+          onSearch={handleHashTableSearch}
+          onDelete={handleHashTableDelete}
+          onSetHashMode={onSetHashMode}
+          onAddRandom={onAddRandom}
+          onClear={onClear}
+          isAnimating={isAnimating}
+        />;
+      case 'trie':
+        return <TrieViz
+          data={localState || state}
+          onInsert={handleTrieInsert}
+          onSearch={handleTrieSearch}
+          onDelete={handleTrieDelete}
+          onClear={onClear}
+          onViewCode={onViewCode}
+          onViewPseudoCode={onViewPseudoCode}
+          onViewAlgorithm={onViewAlgorithm}
+          isAnimating={isAnimating}
+        />;
+      case 'segment_tree':
+        return <SegmentTreeViz
+          data={localState || state}
+          onBuild={onBuildSegment}
+          onRangeQuery={onRangeQuerySegment}
+          onPointUpdate={onPointUpdateSegment}
+          onAddRandom={onAddRandom}
+          onClear={onClear}
+          onViewCode={onViewCode}
+          onViewPseudoCode={onViewPseudoCode}
+          onViewAlgorithm={onViewAlgorithm}
+          isAnimating={isAnimating}
+        />;
+      case 'red_black_tree':
+        return <RedBlackTreeViz
+          data={localState || state}
+          onInsert={async (val) => onInsert(val)}
+          onDelete={async (val) => onDelete(val)}
+          onSearch={async (val) => onSearch(val)}
+          onAddRandom={onAddRandom}
+          onClear={onClear}
+          onViewCode={onViewCode}
+          onViewPseudoCode={onViewPseudoCode}
+          onViewAlgorithm={onViewAlgorithm}
+          isAnimating={isAnimating}
+        />;
+      case 'bubble_sort':
+        return <BubbleSortViz />;
+      case 'selection_sort':
+        return <SelectionSortViz />;
+      case 'insertion_sort':
+        return <InsertionSortViz />;
+      case 'merge_sort':
+        return <MergeSortViz />;
+      case 'quick_sort':
+        return <QuickSortViz />;
       default: return <div className="text-gray-500 text-center p-8">Visualization not available</div>;
     }
   };
@@ -570,7 +1039,7 @@ export function VisualizationCanvas({
         </div>
 
         {/* Zoom controls */}
-        <div className="flex items-center gap-1">
+        <div className={`flex items-center gap-1 ${(dsType === 'hash_table' || dsType === 'trie' || dsType === 'segment_tree' || dsType === 'red_black_tree') ? 'opacity-30 pointer-events-none' : ''}`}>
           <button onClick={handleZoomOut} className={`p-1.5 rounded-lg transition-colors ${isLight ? 'text-gray-500 hover:bg-gray-100' : 'text-gray-400 hover:bg-gray-800'}`}><ZoomOut size={16} /></button>
           <span className={`text-xs font-mono w-12 text-center ${isLight ? 'text-gray-500' : 'text-gray-500'}`}>{Math.round(viewport.scale * 100)}%</span>
           <button onClick={handleZoomIn} className={`p-1.5 rounded-lg transition-colors ${isLight ? 'text-gray-500 hover:bg-gray-100' : 'text-gray-400 hover:bg-gray-800'}`}><ZoomIn size={16} /></button>
@@ -581,12 +1050,12 @@ export function VisualizationCanvas({
       {/* Canvas */}
       <div
         ref={containerRef}
-        className="flex-1 overflow-hidden relative cursor-grab active:cursor-grabbing"
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
-        onWheel={handleWheel}
+        className={`flex-1 relative ${(dsType === 'hash_table' || dsType === 'trie' || dsType === 'segment_tree' || dsType === 'red_black_tree') ? 'overflow-auto' : 'overflow-hidden cursor-grab active:cursor-grabbing'}`}
+        onMouseDown={(dsType === 'hash_table' || dsType === 'trie' || dsType === 'segment_tree' || dsType === 'red_black_tree') ? undefined : handleMouseDown}
+        onMouseMove={(dsType === 'hash_table' || dsType === 'trie' || dsType === 'segment_tree' || dsType === 'red_black_tree') ? undefined : handleMouseMove}
+        onMouseUp={(dsType === 'hash_table' || dsType === 'trie' || dsType === 'segment_tree' || dsType === 'red_black_tree') ? undefined : handleMouseUp}
+        onMouseLeave={(dsType === 'hash_table' || dsType === 'trie' || dsType === 'segment_tree' || dsType === 'red_black_tree') ? undefined : handleMouseUp}
+        onWheel={(dsType === 'hash_table' || dsType === 'trie' || dsType === 'segment_tree' || dsType === 'red_black_tree') ? undefined : handleWheel}
       >
         {/* Grid */}
         <div className="absolute inset-0 pointer-events-none opacity-10"
@@ -596,9 +1065,9 @@ export function VisualizationCanvas({
         <div
           className="min-h-full flex items-center justify-center p-8"
           style={{
-            transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.scale})`,
+            transform: (dsType === 'hash_table' || dsType === 'trie' || dsType === 'segment_tree' || dsType === 'red_black_tree') ? undefined : `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.scale})`,
             transformOrigin: 'center center',
-            transition: isDragging.current ? 'none' : 'transform 0.1s ease-out',
+            transition: (dsType === 'hash_table' || dsType === 'trie' || dsType === 'segment_tree' || dsType === 'red_black_tree') ? 'none' : (isDragging.current ? 'none' : 'transform 0.1s ease-out'),
           }}
         >
           {renderVisualization()}
@@ -606,8 +1075,10 @@ export function VisualizationCanvas({
       </div>
 
       {/* ===== Bottom Toolbar ===== */}
-      <div className={`border-t px-4 py-3 flex flex-wrap items-center gap-2 z-10 ${isLight ? 'bg-white border-gray-200' : 'bg-[#0a1120] border-gray-800'
-        }`}>
+      {/* Hide for hash_table - controls are in the visualization panel */}
+      {dsType !== 'hash_table' && dsType !== 'trie' && dsType !== 'segment_tree' && dsType !== 'red_black_tree' && (
+        <div className={`border-t px-4 py-3 flex flex-wrap items-center gap-2 z-10 ${isLight ? 'bg-white border-gray-200' : 'bg-[#0a1120] border-gray-800'
+          }`}>
 
         {/* Value input + main ops */}
         <input
@@ -874,6 +1345,7 @@ export function VisualizationCanvas({
         </div>
 
       </div>
+      )}
     </div>
   );
 }

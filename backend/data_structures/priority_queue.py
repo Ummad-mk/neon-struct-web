@@ -85,5 +85,13 @@ class PriorityQueue(DataStructureBase):
     def _sorted_items(self):
         return [{'value': value, 'priority': priority} for priority, _, value in sorted(self.heap)]
 
+    def _heap_array(self):
+        # Return elements exactly as they appear in the active heap (physical array shape)
+        return [{'value': value, 'priority': priority} for priority, _, value in self.heap]
+
     def to_dict(self) -> Dict:
-        return {'items': self._sorted_items(), 'size': len(self.heap)}
+        return {
+            'items': self._sorted_items(),
+            'heap_array': self._heap_array(),
+            'size': len(self.heap)
+        }
