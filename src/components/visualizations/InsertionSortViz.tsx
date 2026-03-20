@@ -419,37 +419,14 @@ export default function InsertionSortViz() {
       </div>
 
       {/* Main Visualization */}
-      <div className="flex-1 relative p-6 flex flex-col" style={{ minHeight: 0 }}>
-        {/* Held Tile Display - above the array */}
-        {currentStepData.heldValue !== null && currentStepData.phase !== 'complete' && (
-          <div className="flex flex-col items-center justify-center mb-4">
-            <div className="text-xs text-gray-500 mb-2">Holding</div>
-            <div 
-              className="rounded-lg flex items-center justify-center font-bold"
-              style={{
-                width: '56px',
-                height: '56px',
-                border: `3px solid ${COLORS.holding.border}`,
-                backgroundColor: COLORS.holding.bg,
-                color: COLORS.holding.text,
-                fontSize: '20px',
-                boxShadow: `0 0 20px ${COLORS.holding.border}60`,
-              }}
-            >
-              {currentStepData.heldValue}
-            </div>
-          </div>
-        )}
-
+      <div className="flex-1 relative p-6 flex flex-col gap-4" style={{ minHeight: 0 }}>
         {/* Sorted/Unsorted Labels */}
-        <div className="flex items-center justify-center mb-2">
+        <div className="flex items-center justify-center">
           <div className="relative w-full max-w-2xl">
-            {/* Sorted bracket */}
             <div 
               className="absolute bottom-0 left-0 h-1 bg-green-500/50 rounded transition-all duration-300"
               style={{ width: `${(sortedCount / arraySize) * 100}%` }}
             />
-            {/* Labels */}
             <div className="flex justify-between text-xs">
               <div className="text-green-400">Sorted ({sortedCount})</div>
               <div className="text-teal-400/60">Unsorted ({unsortedCount})</div>
@@ -458,7 +435,7 @@ export default function InsertionSortViz() {
         </div>
 
         {/* Main Tiles Row */}
-        <div className="flex-1 flex items-center justify-center">
+        <div className="flex items-center justify-center">
           <div className="relative flex gap-2">
             {currentStepData.array.map((val, idx) => {
               const colors = getTileColor(idx);
@@ -489,37 +466,58 @@ export default function InsertionSortViz() {
           </div>
         </div>
 
+        {/* Holding Display */}
+        {currentStepData.heldValue !== null && currentStepData.phase !== 'complete' && (
+          <div className="flex flex-col items-center">
+            <div className="text-xs text-gray-500 mb-1">Holding</div>
+            <div 
+              className="rounded-lg flex items-center justify-center font-bold"
+              style={{
+                width: '52px',
+                height: '52px',
+                border: `3px solid ${COLORS.holding.border}`,
+                backgroundColor: COLORS.holding.bg,
+                color: COLORS.holding.text,
+                fontSize: '18px',
+                boxShadow: `0 0 16px ${COLORS.holding.border}60`,
+              }}
+            >
+              {currentStepData.heldValue}
+            </div>
+          </div>
+        )}
+
         {/* Comparison Panel */}
         {currentStepData.comparingWith !== null && currentStepData.heldValue !== null && (
-          <div className="absolute bottom-[20%] left-1/2 -translate-x-1/2 bg-[#0d1420] border border-gray-700 rounded-xl p-4 flex flex-col items-center gap-3 shadow-xl min-w-[280px]">
+          <div className="flex flex-col items-center gap-2">
             <div className="text-xs text-gray-500 uppercase tracking-wide">Comparing</div>
             <div className="flex items-center gap-4">
               <div 
-                className="rounded-lg flex flex-col items-center justify-center gap-1"
+                className="rounded-lg flex flex-col items-center justify-center"
                 style={{
-                  width: '52px',
+                  width: '48px',
                   border: `2px solid ${COLORS.sorted.border}`,
                   backgroundColor: COLORS.sorted.bg,
-                  padding: '8px',
+                  padding: '6px',
                 }}
               >
-                <div className="text-xs text-gray-500">Sorted</div>
-                <div className="text-xl font-bold" style={{ color: COLORS.sorted.text }}>
+                <div className="text-[10px] text-gray-500">Sorted</div>
+                <div className="text-lg font-bold" style={{ color: COLORS.sorted.text }}>
                   {currentStepData.comparingWith}
                 </div>
               </div>
-              <div className="text-2xl font-bold text-gray-500">vs</div>
+              <div className="text-xl font-bold text-gray-500">vs</div>
               <div 
-                className="rounded-lg flex flex-col items-center justify-center gap-1"
+                className="rounded-lg flex flex-col items-center justify-center"
                 style={{
-                  width: '52px',
+                  width: '48px',
                   border: `2px solid ${COLORS.holding.border}`,
                   backgroundColor: COLORS.holding.bg,
-                  padding: '8px',
+                  padding: '6px',
                 }}
               >
-                <div className="text-xs text-gray-500">Held</div>
-                <div className="text-xl font-bold" style={{ color: COLORS.holding.text }}>
+                <div className="text-[10px] text-gray-500">Held</div>
+                <div className="text-lg font-bold" style={{ color: COLORS.holding.text }}>
                   {currentStepData.heldValue}
                 </div>
               </div>
@@ -534,7 +532,7 @@ export default function InsertionSortViz() {
         )}
 
         {/* Caption */}
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-center max-w-2xl">
+        <div className="text-center max-w-2xl mx-auto">
           <div className="text-sm text-gray-300 bg-[#0d1420]/90 rounded-lg px-4 py-2 border border-gray-700">
             {currentStepData.caption}
           </div>
