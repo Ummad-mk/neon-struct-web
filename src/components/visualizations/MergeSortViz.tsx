@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Play, Pause, SkipForward, RotateCcw, Shuffle, HelpCircle } from 'lucide-react';
 
-type Phase = 'intro' | 'split' | 'sortLeft' | 'sortRight' | 'sortingLeft' | 'sortingRight' | 'sortedLeft' | 'sortedRight' | 'merge' | 'complete';
+type Phase = 'intro' | 'split' | 'sortLeft' | 'sortRight' | 'sorted' | 'merge' | 'complete';
 
 interface SortStep {
   array: number[];
@@ -9,27 +9,32 @@ interface SortStep {
   leftIndices: number[];
   rightIndices: number[];
   comparing: [number, number] | null;
+  winner: 'left' | 'right' | null;
   placing: number | null;
   output: number[];
-  outputIndices: number[];
   caption: string;
   comparisons: number;
   placed: number;
   leftPointer: number | null;
   rightPointer: number | null;
+  sortedInHalf: number[];
+  movingTile: number | null;
+  tilePosition: { x: number; y: number } | null;
 }
 
 const COLORS = {
-  unsorted: '#2a5a58',
-  left: '#4a90d0',
-  right: '#d06080',
-  placing: '#40d8d0',
-  merged: '#5ac880',
-  empty: 'rgba(255,255,255,0.06)',
+  unsorted: { border: '#2a5a58', text: '#7abfb8', bg: '#0f1e1e' },
+  left: { border: '#4a90d0', text: '#90c8f0', bg: '#0a1828' },
+  right: { border: '#d06080', text: '#f090a8', bg: '#1a0e16' },
+  comparing: { border: '#60c0ff', text: '#ffffff', bg: '#0a2030' },
+  winner: { border: '#40d8d0', text: '#ffffff', bg: '#0a2020' },
+  placing: { border: '#40d8d0', text: '#ffffff', bg: '#0a1a1e' },
+  sorted: { border: '#4a9a70', text: '#80e8a8', bg: '#0a1a0e' },
+  empty: { border: 'rgba(255,255,255,0.1)', text: 'rgba(255,255,255,0.1)', bg: 'transparent' },
 };
 
 function generateArray(size: number): number[] {
-  return Array.from({ length: size }, () => Math.floor(Math.random() * 80) + 15);
+  return Array.from({ length: size }, () => Math.floor(Math.random() * 90) + 10);
 }
 
 function generateSortSteps(arr: number[]): SortStep[] {
@@ -37,9 +42,12 @@ function generateSortSteps(arr: number[]): SortStep[] {
   const n = arr.length;
   const array = [...arr];
   const output: number[] = [];
-  const outputIndices: number[] = [];
   let comparisons = 0;
   let placed = 0;
+
+  const mid = Math.floor(n / 2);
+  const leftIndices = Array.from({ length: mid }, (_, i) => i);
+  const rightIndices = Array.from({ length: n - mid }, (_, i) => mid + i);
 
   // Phase 1: Intro
   steps.push({
@@ -48,213 +56,214 @@ function generateSortSteps(arr: number[]): SortStep[] {
     leftIndices: [],
     rightIndices: [],
     comparing: null,
+    winner: null,
     placing: null,
     output: [],
-    outputIndices: [],
-    caption: `Starting with an unsorted array of ${n} numbers`,
+    caption: `Starting with ${n} unsorted numbers. Merge sort will split, sort, and merge.`,
     comparisons: 0,
     placed: 0,
     leftPointer: null,
     rightPointer: null,
+    sortedInHalf: [],
+    movingTile: null,
+    tilePosition: null,
   });
 
   // Phase 2: Split
-  const mid = Math.floor(n / 2);
   steps.push({
     array: [...array],
     phase: 'split',
-    leftIndices: Array.from({ length: mid }, (_, i) => i),
-    rightIndices: Array.from({ length: n - mid }, (_, i) => mid + i),
+    leftIndices,
+    rightIndices,
     comparing: null,
+    winner: null,
     placing: null,
     output: [],
-    outputIndices: [],
-    caption: 'The array has been split into two halves',
+    caption: 'The array has been split into two halves. Each half will be sorted independently.',
     comparisons: 0,
     placed: 0,
     leftPointer: null,
     rightPointer: null,
+    sortedInHalf: [],
+    movingTile: null,
+    tilePosition: null,
   });
 
-  // Sort left half using insertion sort visualization
+  // Sort left half using insertion sort
   const leftArr = array.slice(0, mid);
   const leftSorted: number[] = [];
   
   for (let i = 0; i < leftArr.length; i++) {
     const key = leftArr[i];
+    const keyOrigIdx = i;
     let j = i - 1;
-    
+
+    // Show the tile being picked up
     steps.push({
       array: [...array],
-      phase: i === 0 ? 'sortingLeft' : 'sortingLeft',
-      leftIndices: Array.from({ length: mid }, (_, idx) => idx),
-      rightIndices: Array.from({ length: n - mid }, (_, idx) => mid + idx),
+      phase: 'sortLeft',
+      leftIndices,
+      rightIndices,
       comparing: null,
-      placing: i,
+      winner: null,
+      placing: keyOrigIdx,
       output: [...output],
-      outputIndices: [...outputIndices],
-      caption: i === 0 ? 'Sorting the left half...' : `Inserting ${key} into sorted left portion`,
+      caption: `Picking up ${key} to insert into sorted left portion`,
       comparisons,
       placed,
-      leftPointer: i,
+      leftPointer: keyOrigIdx,
       rightPointer: null,
+      sortedInHalf: [...leftSorted],
+      movingTile: key,
+      tilePosition: null,
     });
-    
+
+    // Show comparisons
     while (j >= 0 && leftArr[j] > key) {
       leftArr[j + 1] = leftArr[j];
       j--;
       comparisons++;
+
       steps.push({
         array: [...array],
-        phase: 'sortingLeft',
-        leftIndices: Array.from({ length: mid }, (_, idx) => idx),
-        rightIndices: Array.from({ length: n - mid }, (_, idx) => mid + idx),
+        phase: 'sortLeft',
+        leftIndices,
+        rightIndices,
         comparing: [j, j + 1],
-        placing: null,
+        winner: 'right',
+        placing: j + 1,
         output: [...output],
-        outputIndices: [...outputIndices],
-        caption: `Comparing ${leftArr[j]} with ${key}`,
+        caption: `${key} is smaller than ${leftArr[j]}, shifting ${leftArr[j]} right`,
         comparisons,
         placed,
         leftPointer: j,
-        rightPointer: null,
+        rightPointer: j + 1,
+        sortedInHalf: [...leftSorted],
+        movingTile: key,
+        tilePosition: null,
       });
     }
     leftArr[j + 1] = key;
-    
+    leftSorted.push(key);
+
     steps.push({
       array: [...array],
-      phase: 'sortingLeft',
-      leftIndices: Array.from({ length: mid }, (_, idx) => idx),
-      rightIndices: Array.from({ length: n - mid }, (_, idx) => mid + idx),
+      phase: 'sortLeft',
+      leftIndices,
+      rightIndices,
       comparing: null,
+      winner: 'left',
       placing: j + 1,
       output: [...output],
-      outputIndices: [...outputIndices],
-      caption: `${key} placed at position ${j + 1}`,
+      caption: `${key} placed at position ${j + 1}. Left half: [${leftSorted.join(', ')}]`,
       comparisons,
       placed,
       leftPointer: j + 1,
       rightPointer: null,
+      sortedInHalf: [...leftSorted],
+      movingTile: null,
+      tilePosition: null,
     });
   }
-  leftSorted.push(...leftArr);
 
-  steps.push({
-    array: [...array],
-    phase: 'sortedLeft',
-    leftIndices: Array.from({ length: mid }, (_, i) => i),
-    rightIndices: Array.from({ length: n - mid }, (_, i) => mid + i),
-    comparing: null,
-    placing: null,
-    output: [...output],
-    outputIndices: [...outputIndices],
-    caption: 'Left half is sorted! Smallest to largest.',
-    comparisons,
-    placed,
-    leftPointer: null,
-    rightPointer: null,
-  });
-
-  // Sort right half using insertion sort visualization
+  // Sort right half using insertion sort
   const rightArr = array.slice(mid);
   const rightSorted: number[] = [];
   
   for (let i = 0; i < rightArr.length; i++) {
     const key = rightArr[i];
+    const keyOrigIdx = mid + i;
     let j = i - 1;
-    
+
     steps.push({
       array: [...array],
-      phase: 'sortingRight',
-      leftIndices: Array.from({ length: mid }, (_, idx) => idx),
-      rightIndices: Array.from({ length: n - mid }, (_, idx) => mid + idx),
+      phase: 'sortRight',
+      leftIndices,
+      rightIndices,
       comparing: null,
-      placing: mid + i,
+      winner: null,
+      placing: keyOrigIdx,
       output: [...output],
-      outputIndices: [...outputIndices],
-      caption: 'Sorting the right half...',
+      caption: `Picking up ${key} to insert into sorted right portion`,
       comparisons,
       placed,
       leftPointer: null,
-      rightPointer: mid + i,
+      rightPointer: keyOrigIdx,
+      sortedInHalf: [...leftSorted, ...rightSorted],
+      movingTile: key,
+      tilePosition: null,
     });
-    
+
     while (j >= 0 && rightArr[j] > key) {
       rightArr[j + 1] = rightArr[j];
       j--;
       comparisons++;
+
       steps.push({
         array: [...array],
-        phase: 'sortingRight',
-        leftIndices: Array.from({ length: mid }, (_, idx) => idx),
-        rightIndices: Array.from({ length: n - mid }, (_, idx) => mid + idx),
+        phase: 'sortRight',
+        leftIndices,
+        rightIndices,
         comparing: [mid + j, mid + j + 1],
-        placing: null,
+        winner: 'right',
+        placing: mid + j + 1,
         output: [...output],
-        outputIndices: [...outputIndices],
-        caption: `Comparing ${rightArr[j]} with ${key}`,
+        caption: `${key} is smaller than ${rightArr[j]}, shifting ${rightArr[j]} right`,
         comparisons,
         placed,
-        leftPointer: null,
+        leftPointer: mid + j,
         rightPointer: mid + j + 1,
+        sortedInHalf: [...leftSorted, ...rightSorted],
+        movingTile: key,
+        tilePosition: null,
       });
     }
     rightArr[j + 1] = key;
-    
+    rightSorted.push(key);
+
     steps.push({
       array: [...array],
-      phase: 'sortingRight',
-      leftIndices: Array.from({ length: mid }, (_, idx) => idx),
-      rightIndices: Array.from({ length: n - mid }, (_, idx) => mid + idx),
+      phase: 'sortRight',
+      leftIndices,
+      rightIndices,
       comparing: null,
+      winner: 'left',
       placing: mid + j + 1,
       output: [...output],
-      outputIndices: [...outputIndices],
-      caption: `${key} placed at position ${mid + j + 1}`,
+      caption: `${key} placed at position ${mid + j + 1}. Right half: [${rightSorted.join(', ')}]`,
       comparisons,
       placed,
       leftPointer: null,
       rightPointer: mid + j + 1,
+      sortedInHalf: [...leftSorted, ...rightSorted],
+      movingTile: null,
+      tilePosition: null,
     });
   }
-  rightSorted.push(...rightArr);
 
+  // Both halves sorted
   steps.push({
     array: [...array],
-    phase: 'sortedRight',
-    leftIndices: Array.from({ length: mid }, (_, i) => i),
-    rightIndices: Array.from({ length: n - mid }, (_, i) => mid + i),
+    phase: 'sorted',
+    leftIndices,
+    rightIndices,
     comparing: null,
+    winner: null,
     placing: null,
-    output: [...output],
-    outputIndices: [...outputIndices],
-    caption: 'Right half is sorted! Both halves are ready to merge.',
+    output: [],
+    caption: `Both halves sorted! Left: [${leftSorted.join(', ')}] | Right: [${rightSorted.join(', ')}]. Now merging...`,
     comparisons,
-    placed,
+    placed: 0,
     leftPointer: null,
     rightPointer: null,
+    sortedInHalf: [...leftSorted, ...rightSorted],
+    movingTile: null,
+    tilePosition: null,
   });
 
   // Phase 3: Merge
   let leftIdx = 0;
   let rightIdx = 0;
-
-  steps.push({
-    array: [...array],
-    phase: 'merge',
-    leftIndices: Array.from({ length: mid }, (_, i) => i),
-    rightIndices: Array.from({ length: n - mid }, (_, i) => mid + i),
-    comparing: [leftIdx, mid + rightIdx],
-    placing: null,
-    output: [...output],
-    outputIndices: [...outputIndices],
-    caption: 'Both halves are sorted. Now we merge them together.',
-    comparisons,
-    placed,
-    leftPointer: leftIdx,
-    rightPointer: mid + rightIdx,
-  });
 
   while (leftIdx < leftSorted.length && rightIdx < rightSorted.length) {
     comparisons++;
@@ -264,108 +273,121 @@ function generateSortSteps(arr: number[]): SortStep[] {
     steps.push({
       array: [...array],
       phase: 'merge',
-      leftIndices: Array.from({ length: mid }, (_, i) => i),
-      rightIndices: Array.from({ length: n - mid }, (_, i) => mid + i),
-      comparing: [leftIdx, mid + rightIdx],
+      leftIndices,
+      rightIndices,
+      comparing: [leftIdx, rightIdx],
+      winner: null,
       placing: null,
       output: [...output],
-      outputIndices: [...outputIndices],
-      caption: `Comparing ${leftVal} from left and ${rightVal} from right`,
+      caption: `Comparing ${leftVal} (left) vs ${rightVal} (right)`,
       comparisons,
       placed,
       leftPointer: leftIdx,
       rightPointer: mid + rightIdx,
+      sortedInHalf: [...leftSorted, ...rightSorted],
+      movingTile: null,
+      tilePosition: null,
     });
 
     if (leftVal <= rightVal) {
       output.push(leftVal);
-      outputIndices.push(leftIdx);
       placed++;
+
       steps.push({
         array: [...array],
         phase: 'merge',
-        leftIndices: Array.from({ length: mid }, (_, i) => i),
-        rightIndices: Array.from({ length: n - mid }, (_, i) => mid + i),
+        leftIndices,
+        rightIndices,
         comparing: null,
+        winner: 'left',
         placing: leftIdx,
         output: [...output],
-        outputIndices: [...outputIndices],
-        caption: `${leftVal} is smaller or equal, so ${leftVal} goes next`,
+        caption: `${leftVal} is smaller than ${rightVal}. Placing ${leftVal} into output.`,
         comparisons,
         placed,
         leftPointer: leftIdx,
         rightPointer: mid + rightIdx,
+        sortedInHalf: [...leftSorted, ...rightSorted],
+        movingTile: leftVal,
+        tilePosition: null,
       });
       leftIdx++;
     } else {
       output.push(rightVal);
-      outputIndices.push(mid + rightIdx);
       placed++;
+
       steps.push({
         array: [...array],
         phase: 'merge',
-        leftIndices: Array.from({ length: mid }, (_, i) => i),
-        rightIndices: Array.from({ length: n - mid }, (_, i) => mid + i),
+        leftIndices,
+        rightIndices,
         comparing: null,
+        winner: 'right',
         placing: mid + rightIdx,
         output: [...output],
-        outputIndices: [...outputIndices],
-        caption: `${rightVal} is smaller, so ${rightVal} goes next`,
+        caption: `${rightVal} is smaller than ${leftVal}. Placing ${rightVal} into output.`,
         comparisons,
         placed,
         leftPointer: leftIdx,
         rightPointer: mid + rightIdx,
+        sortedInHalf: [...leftSorted, ...rightSorted],
+        movingTile: rightVal,
+        tilePosition: null,
       });
       rightIdx++;
     }
   }
 
-  // Add remaining elements from left half
+  // Add remaining left elements
   while (leftIdx < leftSorted.length) {
     const val = leftSorted[leftIdx];
     output.push(val);
-    outputIndices.push(leftIdx);
     placed++;
-    comparisons++;
+
     steps.push({
       array: [...array],
       phase: 'merge',
-      leftIndices: Array.from({ length: mid }, (_, i) => i),
-      rightIndices: Array.from({ length: n - mid }, (_, i) => mid + i),
+      leftIndices,
+      rightIndices,
       comparing: null,
+      winner: 'left',
       placing: leftIdx,
       output: [...output],
-      outputIndices: [...outputIndices],
-      caption: 'Left half is empty — remaining right half values go straight in',
+      caption: 'Left half empty! Remaining right half values go straight in.',
       comparisons,
       placed,
       leftPointer: leftIdx,
-      rightPointer: mid + rightIdx,
+      rightPointer: null,
+      sortedInHalf: [...leftSorted, ...rightSorted],
+      movingTile: val,
+      tilePosition: null,
     });
     leftIdx++;
   }
 
-  // Add remaining elements from right half
+  // Add remaining right elements
   while (rightIdx < rightSorted.length) {
     const val = rightSorted[rightIdx];
     output.push(val);
-    outputIndices.push(mid + rightIdx);
     placed++;
-    comparisons++;
+
     steps.push({
       array: [...array],
       phase: 'merge',
-      leftIndices: Array.from({ length: mid }, (_, i) => i),
-      rightIndices: Array.from({ length: n - mid }, (_, i) => mid + i),
+      leftIndices,
+      rightIndices,
       comparing: null,
+      winner: 'right',
       placing: mid + rightIdx,
       output: [...output],
-      outputIndices: [...outputIndices],
-      caption: 'Left half is empty — remaining right half values go straight in',
+      caption: 'Left half values all placed! Remaining right values flow in.',
       comparisons,
       placed,
-      leftPointer: leftIdx,
+      leftPointer: null,
       rightPointer: mid + rightIdx,
+      sortedInHalf: [...leftSorted, ...rightSorted],
+      movingTile: val,
+      tilePosition: null,
     });
     rightIdx++;
   }
@@ -377,14 +399,17 @@ function generateSortSteps(arr: number[]): SortStep[] {
     leftIndices: [],
     rightIndices: [],
     comparing: null,
+    winner: null,
     placing: null,
     output: [...output],
-    outputIndices: Array.from({ length: n }, (_, i) => i),
-    caption: 'Merge complete! The array is sorted.',
+    caption: `Sorted! Read left to right: ${output.join(', ')}. Much faster than bubble sort!`,
     comparisons,
     placed: n,
     leftPointer: null,
     rightPointer: null,
+    sortedInHalf: [],
+    movingTile: null,
+    tilePosition: null,
   });
 
   return steps;
@@ -392,7 +417,7 @@ function generateSortSteps(arr: number[]): SortStep[] {
 
 export default function MergeSortViz() {
   const [arraySize, setArraySize] = useState(12);
-  const [speed, setSpeed] = useState(40);
+  const [speed, setSpeed] = useState(50);
   const [array, setArray] = useState<number[]>(() => generateArray(12));
   const [steps, setSteps] = useState<SortStep[]>([]);
   const [currentStep, setCurrentStep] = useState(0);
@@ -430,7 +455,7 @@ export default function MergeSortViz() {
     if (!playing) return;
 
     const animate = (time: number) => {
-      const delay = Math.max(10, 600 - speed * 9);
+      const delay = Math.max(10, 700 - speed * 9);
       
       if (time - lastTimeRef.current >= delay) {
         if (currentStep < steps.length - 1) {
@@ -458,247 +483,322 @@ export default function MergeSortViz() {
       leftIndices: [],
       rightIndices: [],
       comparing: null,
+      winner: null,
       placing: null,
       output: [],
-      outputIndices: [],
       caption: 'Ready to start',
       comparisons: 0,
       placed: 0,
       leftPointer: null,
       rightPointer: null,
+      sortedInHalf: [],
+      movingTile: null,
+      tilePosition: null,
     };
   }, [currentStep, steps, array]);
 
-  const barWidth = 100 / arraySize;
-  const barGap = Math.max(0.5, 1.5 - arraySize / 50);
-  const actualWidth = barWidth - barGap;
+  const mid = Math.floor(arraySize / 2);
+  
+  // Calculate tile size based on array size
+  const getTileSize = () => {
+    if (arraySize <= 12) return 48;
+    if (arraySize <= 20) return 38;
+    return 28;
+  };
+  
+  const getFontSize = () => {
+    if (arraySize <= 12) return 18;
+    if (arraySize <= 20) return 14;
+    return 11;
+  };
+
+  const tileSize = getTileSize();
+  const fontSize = getFontSize();
+  const gap = 4;
+
+  const getTileColor = (idx: number, isInOutput: boolean, isMoving: boolean, movingVal: number | null) => {
+    // In output row
+    if (isInOutput) {
+      return currentStepData.phase === 'complete' 
+        ? { border: '#6adc98', text: '#ffffff', bg: '#0a1a0e' }
+        : COLORS.sorted;
+    }
+
+    // Moving tile being placed
+    if (isMoving && movingVal !== null) {
+      return COLORS.placing;
+    }
+
+    // Left half
+    if (currentStepData.leftIndices.includes(idx)) {
+      if (currentStepData.comparing?.includes(idx)) {
+        return COLORS.comparing;
+      }
+      if (currentStepData.winner === 'left' && currentStepData.placing === idx) {
+        return COLORS.winner;
+      }
+      if (currentStepData.phase === 'sortLeft' && currentStepData.sortedInHalf.includes(currentStepData.array[idx])) {
+        return COLORS.sorted;
+      }
+      if (currentStepData.sortedInHalf.length > mid) {
+        return COLORS.sorted;
+      }
+      return COLORS.left;
+    }
+
+    // Right half
+    if (currentStepData.rightIndices.includes(idx)) {
+      if (currentStepData.comparing?.includes(idx)) {
+        return COLORS.comparing;
+      }
+      if (currentStepData.winner === 'right' && currentStepData.placing === idx) {
+        return COLORS.winner;
+      }
+      if (currentStepData.phase === 'sortRight' && currentStepData.sortedInHalf.includes(currentStepData.array[idx])) {
+        return COLORS.sorted;
+      }
+      if (currentStepData.sortedInHalf.length >= mid && currentStepData.phase !== 'sortLeft') {
+        return COLORS.sorted;
+      }
+      return COLORS.right;
+    }
+
+    return COLORS.unsorted;
+  };
 
   const getExplanation = (step: SortStep) => {
-    if (step.phase === 'merge' && step.comparing) {
-      const leftVal = array[step.leftPointer || 0];
-      const rightVal = array[step.rightPointer || 0] || array[array.length - 1];
-      return `We compared ${leftVal} from the left half and ${rightVal} from the right half. Since ${leftVal <= rightVal ? leftVal : rightVal} is the smaller number, it gets placed into the output first. The ${leftVal <= rightVal ? 'left' : 'right'} pointer now moves to the next element in its half.`;
-    }
-    if (step.phase === 'sortingLeft' || step.phase === 'sortingRight') {
-      return `We're sorting this half using insertion sort. Each element is compared with the sorted portion and placed in its correct position. This is like sorting a hand of playing cards - easy to understand!`;
-    }
     if (step.phase === 'split') {
-      return `Merge sort works by first splitting the array in half. Each half will be sorted independently, then merged together. This "divide and conquer" approach makes it very efficient.`;
+      return 'Merge sort splits the array in half first. Each half will be sorted independently using insertion sort, then merged together. This "divide and conquer" approach makes it very efficient.';
+    }
+    if (step.phase === 'sortLeft' || step.phase === 'sortRight') {
+      return `We're sorting each half using insertion sort. Pick up a tile, compare it with sorted tiles, and insert it in the correct position. Think of sorting playing cards in your hand!`;
+    }
+    if (step.phase === 'sorted') {
+      return 'Both halves are now sorted! Left half has the smallest numbers, right half has the larger numbers. Now we merge them by comparing the first element of each half.';
+    }
+    if (step.phase === 'merge' && step.comparing) {
+      const leftVal = step.sortedInHalf[step.leftPointer || 0];
+      const rightVal = step.sortedInHalf[mid + (step.rightPointer || 0) - mid];
+      const smaller = Math.min(leftVal, rightVal);
+      return `Comparing the first unsorted tile from each half: ${leftVal} vs ${rightVal}. Since ${smaller} is smaller, it gets placed next into the output row. The other tile waits for its turn.`;
+    }
+    if (step.phase === 'merge' && !step.comparing) {
+      return `A tile has won the comparison and is being placed into the output row. Watch as it arcs down and lands in its correct sorted position!`;
+    }
+    if (step.phase === 'complete') {
+      return `All done! The merge sort algorithm sorted ${arraySize} numbers using divide and conquer. It made ${step.comparisons} comparisons - much more efficient than bubble sort's O(n²) comparisons!`;
     }
     return 'Merge sort combines the simple idea of splitting with the intuitive process of insertion sort to create an efficient sorting algorithm.';
   };
 
-  const mid = Math.floor(arraySize / 2);
-
   return (
     <div className="w-full h-full flex flex-col bg-[#080c14] overflow-hidden">
       {/* Phase Indicator */}
-      <div className="h-12 px-6 py-2 bg-[#0d1420] border-b border-gray-800 flex items-center justify-center gap-4">
-        {['Step 1 — Split', 'Step 2 — Sort each half', 'Step 3 — Merge'].map((label, idx) => {
-          const isActive = 
-            (idx === 0 && (currentStepData.phase === 'intro' || currentStepData.phase === 'split')) ||
-            (idx === 1 && (currentStepData.phase.includes('sort'))) ||
-            (idx === 2 && (currentStepData.phase === 'merge' || currentStepData.phase === 'complete'));
+      <div className="h-12 px-6 py-2 bg-[#0d1420] border-b border-gray-800 flex items-center justify-center gap-6">
+        {[
+          { label: 'Split', phases: ['intro', 'split'] },
+          { label: 'Sort Halves', phases: ['sortLeft', 'sortRight', 'sorted'] },
+          { label: 'Merge', phases: ['merge'] },
+        ].map((item, idx) => {
+          const isActive = item.phases.includes(currentStepData.phase);
           return (
             <div key={idx} className="flex items-center gap-2">
-              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
                 isActive ? 'bg-cyan-500 text-white' : 'bg-gray-700 text-gray-400'
               }`}>
                 {idx + 1}
               </div>
               <span className={`text-sm ${isActive ? 'text-cyan-400' : 'text-gray-500'}`}>
-                {label}
+                {item.label}
               </span>
             </div>
           );
         })}
+        <div className={`ml-4 px-3 py-1 rounded-full text-xs font-medium ${
+          currentStepData.phase === 'complete' 
+            ? 'bg-green-500/20 text-green-400 border border-green-500/50'
+            : 'bg-gray-700/50 text-gray-400'
+        }`}>
+          {currentStepData.phase === 'complete' ? '✓ Complete' : `${currentStepData.placed} of ${arraySize} placed`}
+        </div>
       </div>
 
       {/* Main Visualization */}
-      <div className="flex-1 relative p-4 pb-2" style={{ minHeight: 0 }}>
-        {/* Bars Area */}
-        <div className="relative w-full h-[60%] flex items-end justify-center">
-          {/* Split line */}
-          {currentStepData.phase === 'split' || currentStepData.phase === 'sortingLeft' || currentStepData.phase === 'sortingRight' ||
-           currentStepData.phase === 'sortedLeft' || currentStepData.phase === 'sortedRight' || currentStepData.phase === 'merge' ? (
-            <div 
-              className="absolute top-0 bottom-0 w-px bg-gray-600/50 z-10"
-              style={{ left: `calc(50% - ${barWidth * mid / 2}%)` }}
-            />
-          ) : null}
+      <div className="flex-1 relative p-6 flex flex-col" style={{ minHeight: 0 }}>
+        {/* Split Line */}
+        {currentStepData.phase !== 'intro' && currentStepData.phase !== 'complete' && (
+          <div className="absolute left-1/2 top-[15%] bottom-[25%] w-px bg-gray-600/30 z-0" />
+        )}
 
-          {/* Left/Right labels */}
-          {(currentStepData.phase === 'split' || currentStepData.phase.includes('sort') || currentStepData.phase === 'merge') && (
-            <>
-              <div className="absolute top-0 left-1/2 -translate-x-full -translate-y-6 text-xs text-blue-400">
-                Left half
-              </div>
-              <div className="absolute top-0 left-1/2 translate-x-2 -translate-y-6 text-xs text-rose-400">
-                Right half
-              </div>
-            </>
-          )}
+        {/* Half Labels */}
+        {currentStepData.phase === 'split' || currentStepData.phase.includes('sort') || currentStepData.phase === 'merge' ? (
+          <div className="absolute top-[8%] left-0 right-0 flex justify-center gap-1/2 z-10">
+            <div className="text-sm text-blue-400 font-medium" style={{ position: 'absolute', left: '25%', transform: 'translateX(-50%)' }}>
+              Left half
+            </div>
+            <div className="text-sm text-rose-400 font-medium" style={{ position: 'absolute', left: '75%', transform: 'translateX(-50%)' }}>
+              Right half
+            </div>
+          </div>
+        ) : null}
 
-          {/* Bars */}
-          <div className="relative w-full h-full flex items-end justify-center">
+        {/* Input Tiles Row */}
+        <div className="flex-1 flex items-center justify-center">
+          <div className="relative" style={{ 
+            display: 'flex', 
+            gap: `${gap}px`,
+            paddingLeft: currentStepData.phase === 'split' || currentStepData.phase.includes('sort') ? '100px' : '0px',
+            paddingRight: currentStepData.phase === 'split' || currentStepData.phase.includes('sort') ? '100px' : '0px',
+            transition: 'padding 0.4s ease-in-out'
+          }}>
             {currentStepData.array.map((val, idx) => {
-              let bgColor = COLORS.unsorted;
+              const isInOutput = currentStepData.output.includes(val) && currentStepData.phase === 'complete';
+              const isMoving = currentStepData.movingTile === val && currentStepData.phase === 'merge';
+              const colors = getTileColor(idx, isInOutput, isMoving, currentStepData.movingTile);
               
-              // Left half coloring
-              if (currentStepData.leftIndices.includes(idx) && !currentStepData.outputIndices.includes(idx)) {
-                bgColor = COLORS.left;
-              }
+              const isBeingLifted = currentStepData.placing === idx && (currentStepData.phase === 'sortLeft' || currentStepData.phase === 'sortRight');
               
-              // Right half coloring
-              if (currentStepData.rightIndices.includes(idx) && !currentStepData.outputIndices.includes(idx)) {
-                bgColor = COLORS.right;
-              }
-
-              // Output coloring
-              if (currentStepData.outputIndices.includes(idx)) {
-                bgColor = COLORS.merged;
-              }
-
-              // Placing highlight
-              if (currentStepData.placing === idx) {
-                bgColor = COLORS.placing;
-              }
-
-              // Comparison highlight
-              if (currentStepData.comparing?.includes(idx)) {
-                bgColor = COLORS.placing;
-              }
-
-              // Sorted phases
-              if (currentStepData.phase === 'sortedLeft' && currentStepData.leftIndices.includes(idx)) {
-                bgColor = COLORS.merged;
-              }
-              if (currentStepData.phase === 'sortedRight' && currentStepData.rightIndices.includes(idx)) {
-                bgColor = COLORS.merged;
-              }
-
-              // Complete
-              if (currentStepData.phase === 'complete') {
-                bgColor = COLORS.merged;
-              }
-
               return (
                 <div
                   key={idx}
-                  className="absolute bottom-0 rounded-t transition-all"
+                  className="rounded-lg flex items-center justify-center font-bold transition-all duration-200"
                   style={{
-                    left: `${idx * barWidth}%`,
-                    width: `${actualWidth}%`,
-                    height: `${val}%`,
-                    backgroundColor: bgColor,
-                    boxShadow: currentStepData.placing === idx ? `0 0 15px ${COLORS.placing}` : 'none',
-                    transform: currentStepData.placing === idx ? 'scaleY(1.05)' : 'none',
+                    width: `${tileSize}px`,
+                    height: `${tileSize}px`,
+                    border: `2px solid ${colors.border}`,
+                    backgroundColor: colors.bg,
+                    color: colors.text,
+                    fontSize: `${fontSize}px`,
+                    boxShadow: `0 2px 8px rgba(0,0,0,0.3)${isBeingLifted ? ', 0 0 15px ' + colors.border : ''}`,
+                    transform: isBeingLifted ? 'translateY(-20px) scale(1.1)' : isMoving ? 'translateY(-30px) scale(1.15)' : 'none',
+                    opacity: currentStepData.sortedInHalf.includes(val) && currentStepData.phase === 'merge' && !currentStepData.output.includes(val) ? 0.3 : 1,
                   }}
-                />
+                >
+                  {val}
+                </div>
               );
             })}
           </div>
         </div>
 
+        {/* Output Row Label */}
+        <div className="text-center text-xs text-gray-500 mt-4 mb-2">
+          Output Row
+        </div>
+
         {/* Output Row */}
-        <div className="relative w-full h-[25%] flex items-start justify-center mt-2">
-          <div className="text-xs text-gray-500 mb-1 text-center">Output</div>
-          <div className="relative w-full h-[calc(100%-20px)] flex items-end justify-center">
+        <div className="flex items-start justify-center">
+          <div className="relative flex gap-2" style={{ minHeight: `${tileSize}px` }}>
             {currentStepData.output.map((val, idx) => (
               <div
                 key={`output-${idx}`}
-                className="absolute bottom-0 rounded-t transition-all duration-300"
+                className="rounded-lg flex items-center justify-center font-bold transition-all duration-300"
                 style={{
-                  left: `${idx * barWidth}%`,
-                  width: `${actualWidth}%`,
-                  height: `${val}%`,
-                  backgroundColor: COLORS.merged,
-                  boxShadow: '0 0 10px rgba(90, 200, 128, 0.3)',
+                  width: `${tileSize}px`,
+                  height: `${tileSize}px`,
+                  border: `2px solid ${COLORS.sorted.border}`,
+                  backgroundColor: COLORS.sorted.bg,
+                  color: COLORS.sorted.text,
+                  fontSize: `${fontSize}px`,
+                  boxShadow: '0 0 15px rgba(74, 154, 112, 0.4)',
                 }}
-              />
+              >
+                {val}
+              </div>
             ))}
             {/* Empty slots */}
             {Array.from({ length: arraySize - currentStepData.output.length }).map((_, idx) => (
               <div
                 key={`empty-${idx}`}
-                className="absolute rounded-t border"
+                className="rounded-lg border flex items-center justify-center"
                 style={{
-                  left: `${(currentStepData.output.length + idx) * barWidth}%`,
-                  width: `${actualWidth}%`,
-                  height: '100%',
-                  borderColor: COLORS.empty,
-                  backgroundColor: 'transparent',
+                  width: `${tileSize}px`,
+                  height: `${tileSize}px`,
+                  borderColor: COLORS.empty.border,
+                  color: COLORS.empty.text,
+                  fontSize: `${fontSize}px`,
                 }}
-              />
+              >
+                ?
+              </div>
             ))}
           </div>
         </div>
 
-        {/* Pointer Arrows */}
-        {currentStepData.phase === 'merge' && (
-          <div className="absolute top-[40%] left-0 right-0 flex justify-center pointer-events-none">
-            <div className="flex gap-8">
-              {currentStepData.leftPointer !== null && currentStepData.leftPointer < mid && (
-                <div 
-                  className="text-2xl text-blue-400"
-                  style={{ 
-                    marginLeft: `${currentStepData.leftPointer * barWidth * 7}px`,
-                    textShadow: `0 0 10px ${COLORS.left}`
-                  }}
-                >
-                  ▼
-                </div>
-              )}
-              {currentStepData.rightPointer !== null && currentStepData.rightPointer >= mid && (
-                <div 
-                  className="text-2xl text-rose-400"
-                  style={{ 
-                    marginLeft: `${(currentStepData.rightPointer - mid) * barWidth * 7 + 200}px`,
-                    textShadow: `0 0 10px ${COLORS.right}`
-                  }}
-                >
-                  ▼
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
         {/* Comparison Panel */}
         {currentStepData.phase === 'merge' && currentStepData.comparing && (
-          <div className="absolute top-[45%] left-1/2 -translate-x-1/2 bg-[#0d1420] border border-gray-700 rounded-lg p-4 flex flex-col items-center gap-2">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-12 border-2 border-blue-500 rounded-lg flex items-center justify-center text-xl font-bold text-blue-400">
-                {currentStepData.array[currentStepData.leftPointer || 0]}
+          <div className="absolute bottom-[30%] left-1/2 -translate-x-1/2 bg-[#0d1420] border border-gray-700 rounded-xl p-4 flex flex-col items-center gap-3 shadow-xl">
+            <div className="flex items-center gap-6">
+              <div 
+                className="rounded-lg flex items-center justify-center font-bold"
+                style={{
+                  width: '64px',
+                  height: '64px',
+                  border: `3px solid ${COLORS.left.border}`,
+                  backgroundColor: COLORS.left.bg,
+                  color: COLORS.left.text,
+                  fontSize: '24px',
+                  boxShadow: `0 0 20px ${COLORS.left.border}40`,
+                }}
+              >
+                {currentStepData.sortedInHalf[currentStepData.leftPointer || 0]}
               </div>
-              <div className="text-gray-500 font-bold">vs</div>
-              <div className="w-16 h-12 border-2 border-rose-500 rounded-lg flex items-center justify-center text-xl font-bold text-rose-400">
-                {currentStepData.array[currentStepData.rightPointer || mid] || '-'}
+              <div className="text-2xl font-bold text-gray-500">vs</div>
+              <div 
+                className="rounded-lg flex items-center justify-center font-bold"
+                style={{
+                  width: '64px',
+                  height: '64px',
+                  border: `3px solid ${COLORS.right.border}`,
+                  backgroundColor: COLORS.right.bg,
+                  color: COLORS.right.text,
+                  fontSize: '24px',
+                  boxShadow: `0 0 20px ${COLORS.right.border}40`,
+                }}
+              >
+                {currentStepData.sortedInHalf[mid + (currentStepData.rightPointer || 0) - mid] || '-'}
               </div>
             </div>
-            <div className="text-sm text-gray-400">
+            <div className="text-sm text-gray-300 text-center max-w-xs">
               {currentStepData.caption}
             </div>
           </div>
         )}
 
         {/* Caption */}
-        <div className="absolute bottom-0 left-0 right-0 text-center py-2">
-          <div className="text-sm text-gray-300 bg-[#0d1420]/80 rounded-lg px-4 py-2 inline-block">
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-center max-w-2xl">
+          <div className="text-sm text-gray-300 bg-[#0d1420]/90 rounded-lg px-4 py-2 border border-gray-700">
             {currentStepData.caption}
           </div>
         </div>
 
         {/* Summary */}
         {showSummary && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/70">
-            <div className="bg-[#0d1420] border border-green-500/50 rounded-xl px-8 py-6 text-center">
-              <div className="text-2xl font-bold text-white mb-2">Done!</div>
-              <div className="text-gray-300 mb-4">The array is sorted from smallest to largest.</div>
-              <div className="flex gap-6 justify-center">
-                <div className="text-white">{currentStepData.comparisons} comparisons made</div>
-                <div className="text-green-400">{currentStepData.placed} numbers placed</div>
+          <div className="absolute inset-0 flex items-center justify-center bg-black/80" onClick={() => setShowSummary(false)}>
+            <div className="bg-[#0d1420] border border-green-500/50 rounded-2xl px-12 py-8 text-center max-w-lg" onClick={e => e.stopPropagation()}>
+              <div className="text-3xl font-bold text-white mb-4">Sorted!</div>
+              <div className="text-gray-300 mb-6">
+                Read the numbers left to right — smallest to largest.
               </div>
+              <div className="flex justify-center gap-8 mb-4">
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-white">{currentStepData.comparisons}</div>
+                  <div className="text-xs text-gray-500 uppercase">Comparisons</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-green-400">{arraySize}</div>
+                  <div className="text-xs text-gray-500 uppercase">Numbers Sorted</div>
+                </div>
+              </div>
+              <div className="text-sm text-gray-400 mb-6">
+                Merge sort takes <span className="text-cyan-400">n × log(n)</span> steps — much faster than bubble sort's <span className="text-rose-400">n²</span>!
+              </div>
+              <button 
+                onClick={() => setShowSummary(false)}
+                className="px-6 py-2 bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500/30 transition-colors"
+              >
+                Close
+              </button>
             </div>
           </div>
         )}
@@ -708,12 +808,12 @@ export default function MergeSortViz() {
           <div className="absolute inset-0 flex items-center justify-center bg-black/70" onClick={() => setShowExplanation(false)}>
             <div className="bg-[#0d1420] border border-cyan-500/50 rounded-xl px-8 py-6 max-w-md" onClick={e => e.stopPropagation()}>
               <div className="text-lg font-bold text-cyan-400 mb-3">What's happening?</div>
-              <div className="text-gray-300 leading-relaxed">
+              <div className="text-gray-300 leading-relaxed mb-4">
                 {getExplanation(currentStepData)}
               </div>
               <button 
                 onClick={() => setShowExplanation(false)}
-                className="mt-4 px-4 py-2 bg-cyan-500/20 text-cyan-400 rounded-lg hover:bg-cyan-500/30"
+                className="px-4 py-2 bg-cyan-500/20 text-cyan-400 rounded-lg hover:bg-cyan-500/30"
               >
                 Got it!
               </button>
@@ -724,35 +824,23 @@ export default function MergeSortViz() {
 
       {/* Controls Panel */}
       <div className="bg-[#0a1120] border-t border-gray-800 p-4">
-        {/* Metrics */}
-        <div className="flex justify-center gap-6 mb-4">
-          <div className="text-center">
-            <div className="text-xs text-gray-500 uppercase">Comparisons</div>
-            <div className="text-2xl font-bold text-white">{currentStepData.comparisons}</div>
-          </div>
-          <div className="text-center">
-            <div className="text-xs text-gray-500 uppercase">Numbers Placed</div>
-            <div className="text-2xl font-bold text-green-400">{currentStepData.placed} / {arraySize}</div>
-          </div>
-        </div>
-
         {/* Progress Bar */}
         <div className="w-full h-2 bg-gray-800 rounded-full mb-4 overflow-hidden">
           <div 
-            className="h-full bg-green-500 rounded-full transition-all duration-300"
+            className="h-full bg-gradient-to-r from-cyan-500 to-green-500 rounded-full transition-all duration-300"
             style={{ width: `${(currentStepData.placed / arraySize) * 100}%` }}
           />
         </div>
 
         {/* Controls */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-4">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
               <span className="text-xs text-gray-500">Size</span>
               <input 
                 type="range" 
-                min="6" 
-                max="20" 
+                min="4" 
+                max="16" 
                 value={arraySize} 
                 onChange={e => {
                   setArraySize(Number(e.target.value));
@@ -767,7 +855,7 @@ export default function MergeSortViz() {
               onClick={() => generateNewArray(arraySize)} 
               className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 rounded-lg text-xs text-gray-300"
             >
-              <Shuffle size={14} />Randomize
+              <Shuffle size={14} />New Array
             </button>
           </div>
 
@@ -783,7 +871,6 @@ export default function MergeSortViz() {
             <button 
               onClick={() => setShowExplanation(true)}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-500/20 hover:bg-purple-500/30 rounded-lg text-xs text-purple-400"
-              title="Explain this step"
             >
               <HelpCircle size={14} />Explain
             </button>
@@ -815,7 +902,6 @@ export default function MergeSortViz() {
                 onChange={e => setSpeed(Number(e.target.value))} 
                 className="w-20 accent-cyan-500" 
               />
-              <span className="text-xs text-gray-400 font-mono w-8">{speed}%</span>
             </div>
           </div>
         </div>
@@ -823,11 +909,26 @@ export default function MergeSortViz() {
 
       {/* Legend */}
       <div className="bg-[#0d1420] border-t border-gray-800 px-4 py-2 flex justify-center gap-6 text-xs">
-        <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded" style={{ backgroundColor: COLORS.unsorted }} /><span className="text-gray-500">Unsorted</span></div>
-        <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded" style={{ backgroundColor: COLORS.left }} /><span className="text-gray-500">Left half</span></div>
-        <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded" style={{ backgroundColor: COLORS.right }} /><span className="text-gray-500">Right half</span></div>
-        <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded" style={{ backgroundColor: COLORS.placing }} /><span className="text-gray-500">Being placed</span></div>
-        <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded" style={{ backgroundColor: COLORS.merged }} /><span className="text-gray-500">Merged</span></div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-4 h-4 rounded border-2" style={{ borderColor: COLORS.unsorted.border, backgroundColor: COLORS.unsorted.bg }} />
+          <span className="text-gray-500">Unsorted</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-4 h-4 rounded border-2" style={{ borderColor: COLORS.left.border, backgroundColor: COLORS.left.bg }} />
+          <span className="text-gray-500">Left Half</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-4 h-4 rounded border-2" style={{ borderColor: COLORS.right.border, backgroundColor: COLORS.right.bg }} />
+          <span className="text-gray-500">Right Half</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-4 h-4 rounded border-2" style={{ borderColor: COLORS.placing.border, backgroundColor: COLORS.placing.bg }} />
+          <span className="text-gray-500">Placing</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-4 h-4 rounded border-2" style={{ borderColor: COLORS.sorted.border, backgroundColor: COLORS.sorted.bg }} />
+          <span className="text-gray-500">Sorted</span>
+        </div>
       </div>
     </div>
   );
