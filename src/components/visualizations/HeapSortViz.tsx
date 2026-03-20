@@ -67,16 +67,18 @@ interface TreeNode {
   children: number[];
 }
 
-function buildTree(heapSize: number, tileWidth: number, treeCenterX: number): TreeNode[] {
+function buildTree(heapSize: number, nodeSize: number, containerWidth: number): TreeNode[] {
   const nodes: TreeNode[] = [];
-  const levelHeight = 70;
+  const levelHeight = 80;
+  const totalWidth = containerWidth;
 
   for (let i = 0; i < heapSize; i++) {
     const level = Math.floor(Math.log2(i + 1));
     const nodesInLevel = Math.pow(2, level);
-    const levelStartX = treeCenterX - (tileWidth * nodesInLevel) / 2;
-    const x = levelStartX + (i - (nodesInLevel - 1)) * tileWidth + tileWidth / 2;
-    const y = 30 + level * levelHeight;
+    const totalLevelWidth = nodesInLevel * nodeSize + (nodesInLevel - 1) * 10;
+    const levelStartX = (totalWidth - totalLevelWidth) / 2;
+    const x = levelStartX + (i - (nodesInLevel - 1)) * (nodeSize + 10) + nodeSize / 2;
+    const y = 20 + level * levelHeight;
 
     nodes.push({ value: 0, index: i, level, x, y, children: [] });
   }
@@ -663,8 +665,10 @@ export default function HeapSortViz() {
 
   const tileSize = getTileSize();
   const fontSize = getFontSize();
-  const treeCenterX = 400;
-  const treeNodes = useMemo(() => buildTree(currentStepData.heapSize, tileSize * 2, treeCenterX), [currentStepData.heapSize, tileSize, treeCenterX]);
+  const treeNodeSize = Math.min(48, tileSize + 16);
+  const treeFontSize = Math.min(14, fontSize + 4);
+  const containerWidth = 900;
+  const treeNodes = useMemo(() => buildTree(currentStepData.heapSize, treeNodeSize, containerWidth), [currentStepData.heapSize, treeNodeSize, containerWidth]);
   const sortedCount = currentStepData.sortedCount;
 
   const getTileColor = (idx: number) => {
@@ -863,21 +867,21 @@ export default function HeapSortViz() {
                 key={node.index}
                 className="absolute flex flex-col items-center"
                 style={{
-                  left: node.x - tileSize / 2,
-                  top: node.y - tileSize / 2,
-                  width: tileSize,
-                  height: tileSize,
+                  left: node.x - treeNodeSize / 2,
+                  top: node.y - treeNodeSize / 2,
+                  width: treeNodeSize,
+                  height: treeNodeSize,
                 }}
               >
                 <div
                   className="rounded-full flex items-center justify-center font-bold transition-all duration-200"
                   style={{
-                    width: tileSize,
-                    height: tileSize,
+                    width: treeNodeSize,
+                    height: treeNodeSize,
                     border: `2px solid ${colors.border}`,
                     backgroundColor: colors.bg,
                     color: colors.text,
-                    fontSize: `${fontSize}px`,
+                    fontSize: `${treeFontSize}px`,
                     transform: `scale(${scale})`,
                     boxShadow: glow ? `0 0 12px ${colors.border}40` : '0 2px 6px rgba(0,0,0,0.3)',
                     zIndex: glow ? 10 : 1,
