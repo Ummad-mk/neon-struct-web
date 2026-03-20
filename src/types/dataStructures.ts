@@ -16,7 +16,8 @@ export type DataStructureType =
   | 'quick_sort'
   | 'merge_sort'
   | 'insertion_sort'
-  | 'selection_sort';
+  | 'selection_sort'
+  | 'heap_sort';
 
 export interface OperationInfo {
   name: string;
