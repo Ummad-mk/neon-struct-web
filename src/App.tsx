@@ -17,6 +17,7 @@ import SelectionSortViz from './components/visualizations/SelectionSortViz';
 import HeapSortViz from './components/visualizations/HeapSortViz';
 import BubbleSortViz from './components/visualizations/BubbleSortViz';
 import LinearSearchViz from './components/visualizations/LinearSearchViz';
+import JumpSearchViz from './components/visualizations/JumpSearchViz';
 
 function App() {
   // --- View & Layout State ---
@@ -569,6 +570,8 @@ function App() {
             <BubbleSortViz />
           ) : currentView === 'linear_search' ? (
             <LinearSearchViz />
+          ) : currentView === 'jump_search' ? (
+            <JumpSearchViz />
           ) : (
             <>
               <VisualizationCanvas

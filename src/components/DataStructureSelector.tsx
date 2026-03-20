@@ -80,6 +80,7 @@ const SEARCHING_GROUPS = [
     category: 'Searching',
     items: [
       { type: 'linear_search', label: 'Linear Search', icon: Search },
+      { type: 'jump_search', label: 'Jump Search', icon: Search },
     ]
   }
 ];
