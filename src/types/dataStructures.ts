@@ -13,7 +13,8 @@ export type DataStructureType =
   | 'segment_tree'
   | 'red_black_tree'
   | 'priority_queue'
-  | 'quick_sort';
+  | 'quick_sort'
+  | 'merge_sort';
 
 export interface OperationInfo {
   name: string;

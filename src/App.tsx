@@ -11,6 +11,7 @@ import { useDataStructure } from './hooks/useDataStructure';
 import { useNotification } from './hooks/useNotification';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import QuickSortViz from './components/visualizations/QuickSortViz';
+import MergeSortViz from './components/visualizations/MergeSortViz';
 
 function App() {
   // --- View & Layout State ---
@@ -551,6 +552,8 @@ function App() {
             <Dashboard onStart={() => setCurrentView('singly_linked_list')} />
           ) : currentView === 'quick_sort' ? (
             <QuickSortViz />
+          ) : currentView === 'merge_sort' ? (
+            <MergeSortViz />
           ) : (
             <>
               <VisualizationCanvas

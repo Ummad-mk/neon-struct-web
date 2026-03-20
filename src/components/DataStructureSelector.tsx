@@ -66,6 +66,7 @@ const ALGORITHM_GROUPS = [
     category: 'Sorting',
     items: [
       { type: 'quick_sort', label: 'Quick Sort', icon: BarChart3 },
+      { type: 'merge_sort', label: 'Merge Sort', icon: BarChart3 },
     ]
   }
 ];
