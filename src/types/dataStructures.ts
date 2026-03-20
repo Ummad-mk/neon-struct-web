@@ -17,7 +17,8 @@ export type DataStructureType =
   | 'merge_sort'
   | 'insertion_sort'
   | 'selection_sort'
-  | 'heap_sort';
+  | 'heap_sort'
+  | 'bubble_sort';
 
 export interface OperationInfo {
   name: string;

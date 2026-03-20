@@ -70,6 +70,7 @@ const ALGORITHM_GROUPS = [
       { type: 'insertion_sort', label: 'Insertion Sort', icon: BarChart3 },
       { type: 'selection_sort', label: 'Selection Sort', icon: BarChart3 },
       { type: 'heap_sort', label: 'Heap Sort', icon: BarChart3 },
+      { type: 'bubble_sort', label: 'Bubble Sort', icon: BarChart3 },
     ]
   }
 ];

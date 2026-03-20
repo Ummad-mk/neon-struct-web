@@ -15,6 +15,7 @@ import MergeSortViz from './components/visualizations/MergeSortViz';
 import InsertionSortViz from './components/visualizations/InsertionSortViz';
 import SelectionSortViz from './components/visualizations/SelectionSortViz';
 import HeapSortViz from './components/visualizations/HeapSortViz';
+import BubbleSortViz from './components/visualizations/BubbleSortViz';
 
 function App() {
   // --- View & Layout State ---
@@ -563,6 +564,8 @@ function App() {
             <SelectionSortViz />
           ) : currentView === 'heap_sort' ? (
             <HeapSortViz />
+          ) : currentView === 'bubble_sort' ? (
+            <BubbleSortViz />
           ) : (
             <>
               <VisualizationCanvas
