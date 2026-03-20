@@ -229,6 +229,7 @@ export function DataStructureSelector({
           })}
 
           {/* ALGORITHM GROUPS */}
+          {!isCollapsed && <p className={labelStyle}>Algorithms</p>}
           {[...ALGORITHM_GROUPS, ...SEARCHING_GROUPS].map((group) => {
             const isOpen = openGroups[group.category] ?? true;
             return (
