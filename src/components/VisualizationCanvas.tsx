@@ -1050,12 +1050,12 @@ export function VisualizationCanvas({
       {/* Canvas */}
       <div
         ref={containerRef}
-        className={`flex-1 relative ${(dsType === 'hash_table' || dsType === 'trie' || dsType === 'segment_tree' || dsType === 'red_black_tree') ? 'overflow-auto' : 'overflow-hidden cursor-grab active:cursor-grabbing'}`}
-        onMouseDown={(dsType === 'hash_table' || dsType === 'trie' || dsType === 'segment_tree' || dsType === 'red_black_tree') ? undefined : handleMouseDown}
-        onMouseMove={(dsType === 'hash_table' || dsType === 'trie' || dsType === 'segment_tree' || dsType === 'red_black_tree') ? undefined : handleMouseMove}
-        onMouseUp={(dsType === 'hash_table' || dsType === 'trie' || dsType === 'segment_tree' || dsType === 'red_black_tree') ? undefined : handleMouseUp}
-        onMouseLeave={(dsType === 'hash_table' || dsType === 'trie' || dsType === 'segment_tree' || dsType === 'red_black_tree') ? undefined : handleMouseUp}
-        onWheel={(dsType === 'hash_table' || dsType === 'trie' || dsType === 'segment_tree' || dsType === 'red_black_tree') ? undefined : handleWheel}
+        className={`flex-1 relative ${(dsType === 'hash_table' || dsType === 'trie' || dsType === 'segment_tree' || dsType === 'red_black_tree' || dsType === 'bubble_sort' || dsType === 'selection_sort' || dsType === 'insertion_sort' || dsType === 'merge_sort' || dsType === 'quick_sort') ? 'overflow-auto' : 'overflow-hidden cursor-grab active:cursor-grabbing'}`}
+        onMouseDown={(dsType === 'hash_table' || dsType === 'trie' || dsType === 'segment_tree' || dsType === 'red_black_tree' || dsType === 'bubble_sort' || dsType === 'selection_sort' || dsType === 'insertion_sort' || dsType === 'merge_sort' || dsType === 'quick_sort') ? undefined : handleMouseDown}
+        onMouseMove={(dsType === 'hash_table' || dsType === 'trie' || dsType === 'segment_tree' || dsType === 'red_black_tree' || dsType === 'bubble_sort' || dsType === 'selection_sort' || dsType === 'insertion_sort' || dsType === 'merge_sort' || dsType === 'quick_sort') ? undefined : handleMouseMove}
+        onMouseUp={(dsType === 'hash_table' || dsType === 'trie' || dsType === 'segment_tree' || dsType === 'red_black_tree' || dsType === 'bubble_sort' || dsType === 'selection_sort' || dsType === 'insertion_sort' || dsType === 'merge_sort' || dsType === 'quick_sort') ? undefined : handleMouseUp}
+        onMouseLeave={(dsType === 'hash_table' || dsType === 'trie' || dsType === 'segment_tree' || dsType === 'red_black_tree' || dsType === 'bubble_sort' || dsType === 'selection_sort' || dsType === 'insertion_sort' || dsType === 'merge_sort' || dsType === 'quick_sort') ? undefined : handleMouseUp}
+        onWheel={(dsType === 'hash_table' || dsType === 'trie' || dsType === 'segment_tree' || dsType === 'red_black_tree' || dsType === 'bubble_sort' || dsType === 'selection_sort' || dsType === 'insertion_sort' || dsType === 'merge_sort' || dsType === 'quick_sort') ? undefined : handleWheel}
       >
         {/* Grid */}
         <div className="absolute inset-0 pointer-events-none opacity-10"
@@ -1065,9 +1065,9 @@ export function VisualizationCanvas({
         <div
           className="min-h-full flex items-center justify-center p-8"
           style={{
-            transform: (dsType === 'hash_table' || dsType === 'trie' || dsType === 'segment_tree' || dsType === 'red_black_tree') ? undefined : `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.scale})`,
+            transform: (dsType === 'hash_table' || dsType === 'trie' || dsType === 'segment_tree' || dsType === 'red_black_tree' || dsType === 'bubble_sort' || dsType === 'selection_sort' || dsType === 'insertion_sort' || dsType === 'merge_sort' || dsType === 'quick_sort') ? undefined : `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.scale})`,
             transformOrigin: 'center center',
-            transition: (dsType === 'hash_table' || dsType === 'trie' || dsType === 'segment_tree' || dsType === 'red_black_tree') ? 'none' : (isDragging.current ? 'none' : 'transform 0.1s ease-out'),
+            transition: (dsType === 'hash_table' || dsType === 'trie' || dsType === 'segment_tree' || dsType === 'red_black_tree' || dsType === 'bubble_sort' || dsType === 'selection_sort' || dsType === 'insertion_sort' || dsType === 'merge_sort' || dsType === 'quick_sort') ? 'none' : (isDragging.current ? 'none' : 'transform 0.1s ease-out'),
           }}
         >
           {renderVisualization()}
@@ -1075,8 +1075,8 @@ export function VisualizationCanvas({
       </div>
 
       {/* ===== Bottom Toolbar ===== */}
-      {/* Hide for hash_table - controls are in the visualization panel */}
-      {dsType !== 'hash_table' && dsType !== 'trie' && dsType !== 'segment_tree' && dsType !== 'red_black_tree' && (
+      {/* Hide for hash_table, trie, segment_tree, red_black_tree, and sorting - controls are in the visualization panel */}
+      {dsType !== 'hash_table' && dsType !== 'trie' && dsType !== 'segment_tree' && dsType !== 'red_black_tree' && dsType !== 'bubble_sort' && dsType !== 'selection_sort' && dsType !== 'insertion_sort' && dsType !== 'merge_sort' && dsType !== 'quick_sort' && (
         <div className={`border-t px-4 py-3 flex flex-wrap items-center gap-2 z-10 ${isLight ? 'bg-white border-gray-200' : 'bg-[#0a1120] border-gray-800'
           }`}>
 
