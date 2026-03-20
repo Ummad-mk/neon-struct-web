@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { DataStructureType } from '../types/dataStructures';
 import {
   Link2, Repeat, Layers, List, ArrowLeftRight, Binary, Network, GitFork, ArrowDownUp,
+  BarChart3,
   ChevronLeft, ChevronRight, LayoutDashboard, Undo2, Redo2, Settings, ChevronDown, ChevronUp
 } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
@@ -60,7 +61,14 @@ const DATA_STRUCTURE_GROUPS = [
   }
 ];
 
-const ALGORITHM_GROUPS: { category: string; items: { type: string; label: string; icon: any }[] }[] = [];
+const ALGORITHM_GROUPS = [
+  {
+    category: 'Sorting',
+    items: [
+      { type: 'quick_sort', label: 'Quick Sort', icon: BarChart3 },
+    ]
+  }
+];
 
 export function DataStructureSelector({
   selected, isDashboard = false, onSelect, isCollapsed, onToggleCollapse, onDashboardClick, onUndo, onRedo

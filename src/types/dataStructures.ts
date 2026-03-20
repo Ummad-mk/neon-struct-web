@@ -12,7 +12,8 @@ export type DataStructureType =
   | 'trie'
   | 'segment_tree'
   | 'red_black_tree'
-  | 'priority_queue';
+  | 'priority_queue'
+  | 'quick_sort';
 
 export interface OperationInfo {
   name: string;
