@@ -223,6 +223,7 @@ export default function LinearSearchViz() {
   const [showFlipFlash, setShowFlipFlash] = useState(false);
   const [showMatchArc, setShowMatchArc] = useState(false);
   const [showEliminatedFlash, setShowEliminatedFlash] = useState(false);
+  const [customTargetInput, setCustomTargetInput] = useState('');
 
   const animationRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number>(0);
@@ -283,11 +284,11 @@ export default function LinearSearchViz() {
     setShowEliminatedFlash(false);
   }, [array, arrayType]);
 
-  const placeTargetAtPosition = useCallback((pos: number) => {
-    if (array.length === 0 || pos < 1 || pos > array.length) return;
-    const newTarget = array[pos - 1];
-    setTarget(newTarget);
-    setSteps(generateSearchSteps([...array], newTarget, arrayType));
+  const searchCustomTarget = useCallback(() => {
+    const val = parseInt(customTargetInput);
+    if (isNaN(val)) return;
+    setTarget(val);
+    setSteps(generateSearchSteps([...array], val, arrayType));
     setCurrentStep(0);
     setPlaying(false);
     setShowSummary(false);
@@ -295,7 +296,23 @@ export default function LinearSearchViz() {
     setShowFlipFlash(false);
     setShowMatchArc(false);
     setShowEliminatedFlash(false);
-  }, [array, arrayType]);
+  }, [array, arrayType, customTargetInput]);
+
+  const generateRandomArray = useCallback(() => {
+    const newArr = generateArray(arraySize);
+    setArray(newArr);
+    const newTarget = newArr[Math.floor(Math.random() * newArr.length)];
+    setTarget(newTarget);
+    setSteps(generateSearchSteps(newArr, newTarget, 'random'));
+    setCurrentStep(0);
+    setPlaying(false);
+    setShowSummary(false);
+    setShowExplanation(false);
+    setShowFlipFlash(false);
+    setShowMatchArc(false);
+    setShowEliminatedFlash(false);
+    setArrayType('random');
+  }, [arraySize]);
 
   useEffect(() => {
     generateNewArray(arraySize, arrayType);
@@ -497,7 +514,27 @@ export default function LinearSearchViz() {
         </div>
 
         {/* Input Controls */}
-        <div className="flex items-center justify-center gap-3">
+        <div className="flex items-center justify-center gap-3 flex-wrap">
+          <input
+            type="number"
+            placeholder="Enter number..."
+            value={customTargetInput}
+            onChange={(e) => setCustomTargetInput(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && searchCustomTarget()}
+            className="w-36 px-3 py-1.5 rounded-lg text-sm font-mono bg-gray-900 text-cyan-400 border border-cyan-500/50 placeholder-gray-600 focus:outline-none focus:border-cyan-400 transition-colors"
+          />
+          <button
+            onClick={searchCustomTarget}
+            className="px-4 py-1.5 rounded-lg text-xs font-medium bg-cyan-500/30 text-cyan-300 border border-cyan-500/50 hover:bg-cyan-500/40 transition-colors"
+          >
+            Search
+          </button>
+          <button
+            onClick={generateRandomArray}
+            className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-700/50 text-gray-300 border border-gray-600 hover:bg-gray-700 transition-colors"
+          >
+            Generate Array
+          </button>
           <button
             onClick={regenerateTarget}
             className="px-3 py-1.5 rounded-lg text-xs font-medium bg-cyan-500/20 text-cyan-400 border border-cyan-500/50 hover:bg-cyan-500/30 transition-colors"
@@ -510,16 +547,6 @@ export default function LinearSearchViz() {
           >
             Missing Target
           </button>
-          <select
-            onChange={(e) => placeTargetAtPosition(parseInt(e.target.value))}
-            className="px-3 py-1.5 rounded-lg text-xs font-mono bg-gray-800 text-gray-300 border border-gray-700 hover:border-cyan-500/50 transition-colors cursor-pointer"
-            value=""
-          >
-            <option value="" disabled>Hide at position...</option>
-            {Array.from({ length: arraySize }, (_, i) => (
-              <option key={i + 1} value={i + 1}>Position {i + 1}</option>
-            ))}
-          </select>
         </div>
 
         {/* Progress Bar */}
