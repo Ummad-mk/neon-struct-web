@@ -550,19 +550,7 @@ function App() {
           {currentView === 'dashboard' ? (
             <Dashboard onStart={() => setCurrentView('singly_linked_list')} />
           ) : currentView === 'quick_sort' ? (
-            <>
-              <QuickSortViz />
-              <OperationPanel
-                operationInfo={operationInfo}
-                activeDS={activeDS}
-                viewport={viewport}
-                onViewCode={(mode) => setModalState({ isOpen: true, type: 'code', mode })}
-                onViewPseudoCode={(mode) => setModalState({ isOpen: true, type: 'pseudo', mode })}
-                onViewAlgorithm={(mode) => setModalState({ isOpen: true, type: 'algorithm', mode })}
-                isCollapsed={rightCollapsed}
-                onToggleCollapse={() => setRightCollapsed(!rightCollapsed)}
-              />
-            </>
+            <QuickSortViz />
           ) : (
             <>
               <VisualizationCanvas
