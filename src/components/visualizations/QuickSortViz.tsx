@@ -346,7 +346,7 @@ export default function QuickSortViz() {
   const actualWidth = barWidth - barGap;
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-[#080c14] p-4 overflow-auto">
+    <div className="w-full h-full flex flex-col bg-[#080c14] p-4">
       {/* Main Visualization */}
       <div className="flex-1 rounded-xl bg-[#0d1420] border border-gray-800 relative overflow-hidden" style={{ aspectRatio: '16/9' }}>
         {/* Active Range Background */}

@@ -1051,7 +1051,7 @@ export function VisualizationCanvas({
 
         {/* Content */}
         <div
-          className="min-h-full flex items-center justify-center p-8"
+          className={`${dsType === 'quick_sort' ? 'h-full' : 'min-h-full'} flex items-center justify-center p-8`}
           style={{
             transform: (dsType === 'hash_table' || dsType === 'trie' || dsType === 'segment_tree' || dsType === 'red_black_tree' || dsType === 'quick_sort') ? undefined : `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.scale})`,
             transformOrigin: 'center center',
