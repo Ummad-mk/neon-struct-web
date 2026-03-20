@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { Play, Pause, SkipForward, RotateCcw, Shuffle, HelpCircle } from 'lucide-react';
+import { Play, Pause, SkipForward, RotateCcw, HelpCircle } from 'lucide-react';
 
 type Phase = 'idle' | 'picking' | 'comparing' | 'shifting' | 'dropping' | 'complete';
 
@@ -314,7 +314,6 @@ export default function InsertionSortViz() {
 
   const tileSize = getTileSize();
   const fontSize = getFontSize();
-  const gap = 6;
 
   const getTileColor = (idx: number) => {
     const { sortedCount, phase, heldValue, comparingWith, shiftingIndices, emptySlotIndex, array } = currentStepData;
@@ -421,6 +420,27 @@ export default function InsertionSortViz() {
 
       {/* Main Visualization */}
       <div className="flex-1 relative p-6 flex flex-col" style={{ minHeight: 0 }}>
+        {/* Held Tile Display - above the array */}
+        {currentStepData.heldValue !== null && currentStepData.phase !== 'complete' && (
+          <div className="flex flex-col items-center justify-center mb-4">
+            <div className="text-xs text-gray-500 mb-2">Holding</div>
+            <div 
+              className="rounded-lg flex items-center justify-center font-bold"
+              style={{
+                width: '56px',
+                height: '56px',
+                border: `3px solid ${COLORS.holding.border}`,
+                backgroundColor: COLORS.holding.bg,
+                color: COLORS.holding.text,
+                fontSize: '20px',
+                boxShadow: `0 0 20px ${COLORS.holding.border}60`,
+              }}
+            >
+              {currentStepData.heldValue}
+            </div>
+          </div>
+        )}
+
         {/* Sorted/Unsorted Labels */}
         <div className="flex items-center justify-center mb-2">
           <div className="relative w-full max-w-2xl">
@@ -468,27 +488,6 @@ export default function InsertionSortViz() {
             })}
           </div>
         </div>
-
-        {/* Holding Display */}
-        {currentStepData.heldValue !== null && currentStepData.phase !== 'complete' && (
-          <div className="flex items-center justify-center mt-6 gap-4">
-            <div className="text-sm text-gray-500">Holding:</div>
-            <div 
-              className="rounded-lg flex items-center justify-center font-bold"
-              style={{
-                width: '56px',
-                height: '56px',
-                border: `3px solid ${COLORS.holding.border}`,
-                backgroundColor: COLORS.holding.bg,
-                color: COLORS.holding.text,
-                fontSize: '20px',
-                boxShadow: `0 0 20px ${COLORS.holding.border}60`,
-              }}
-            >
-              {currentStepData.heldValue}
-            </div>
-          </div>
-        )}
 
         {/* Comparison Panel */}
         {currentStepData.comparingWith !== null && currentStepData.heldValue !== null && (
