@@ -9,6 +9,7 @@ import { trie } from './trie';
 import { segment_tree } from './segment_tree';
 import { priority_queue } from './priority_queue';
 import { hash_table } from './hash_table';
+import { quick_sort } from './quick_sort';
 
 // Placeholder: Reuse linked list data for others until you create their folders
 const placeholder = singly_linked_list;
@@ -27,5 +28,6 @@ export const DSInfo: Record<string, any> = {
   deque: placeholder,
   graph,
   directed_graph,
-  hash_table
+  hash_table,
+  quick_sort
 };
