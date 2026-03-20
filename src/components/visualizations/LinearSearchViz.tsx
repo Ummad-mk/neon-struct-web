@@ -21,12 +21,10 @@ interface SearchStep {
 
 const COLORS = {
   target: { border: '#40d8d0', text: '#ffffff', bg: '#0a1e1e' },
-  unflipped: { border: '#1a3a38', text: '#2a5a58', bg: '#0a1212' },
-  flipped: { border: '#2a5a58', text: '#7abfb8', bg: '#0f1e1e' },
+  unsorted: { border: '#2a5a58', text: '#7abfb8', bg: '#0f1e1e' },
   eliminated: { border: '#1a3030', text: '#3a5a50', bg: '#0a1414' },
   match: { border: '#40d8d0', text: '#ffffff', bg: '#0a1e1e' },
   foundArc: '#40d8d0',
-  unflippedFailure: { border: '#3a1520', text: '#4a2030', bg: '#120608' },
 };
 
 function generateArray(size: number): number[] {
@@ -220,9 +218,7 @@ export default function LinearSearchViz() {
   const [showExplanation, setShowExplanation] = useState(false);
   const [_showSummary, setShowSummary] = useState(false);
   const [pulsePhase, setPulsePhase] = useState(0);
-  const [showFlipFlash, setShowFlipFlash] = useState(false);
   const [showMatchArc, setShowMatchArc] = useState(false);
-  const [showEliminatedFlash, setShowEliminatedFlash] = useState(false);
   const [customTargetInput, setCustomTargetInput] = useState('');
 
   const animationRef = useRef<number | null>(null);
@@ -249,9 +245,7 @@ export default function LinearSearchViz() {
     setPlaying(false);
     setShowSummary(false);
     setShowExplanation(false);
-    setShowFlipFlash(false);
     setShowMatchArc(false);
-    setShowEliminatedFlash(false);
   }, [arrayType]);
 
   const regenerateTarget = useCallback(() => {
@@ -263,9 +257,7 @@ export default function LinearSearchViz() {
     setPlaying(false);
     setShowSummary(false);
     setShowExplanation(false);
-    setShowFlipFlash(false);
     setShowMatchArc(false);
-    setShowEliminatedFlash(false);
   }, [array, arrayType]);
 
   const regenerateMissingTarget = useCallback(() => {
@@ -279,9 +271,7 @@ export default function LinearSearchViz() {
     setPlaying(false);
     setShowSummary(false);
     setShowExplanation(false);
-    setShowFlipFlash(false);
     setShowMatchArc(false);
-    setShowEliminatedFlash(false);
   }, [array, arrayType]);
 
   const searchCustomTarget = useCallback(() => {
@@ -293,9 +283,7 @@ export default function LinearSearchViz() {
     setPlaying(false);
     setShowSummary(false);
     setShowExplanation(false);
-    setShowFlipFlash(false);
     setShowMatchArc(false);
-    setShowEliminatedFlash(false);
   }, [array, arrayType, customTargetInput]);
 
   const generateRandomArray = useCallback(() => {
@@ -308,9 +296,7 @@ export default function LinearSearchViz() {
     setPlaying(false);
     setShowSummary(false);
     setShowExplanation(false);
-    setShowFlipFlash(false);
     setShowMatchArc(false);
-    setShowEliminatedFlash(false);
     setArrayType('random');
   }, [arraySize]);
 
@@ -321,19 +307,10 @@ export default function LinearSearchViz() {
   const handleStep = useCallback(() => {
     if (currentStep < steps.length - 1) {
       const nextStep = steps[currentStep + 1];
-      const currStep = steps[currentStep];
 
-      if (nextStep.phase === 'flipped' && currStep.phase !== 'flipped') {
-        setShowFlipFlash(true);
-        setTimeout(() => setShowFlipFlash(false), 300);
-      }
       if (nextStep.phase === 'match') {
         setShowMatchArc(true);
         setTimeout(() => setShowMatchArc(false), 600);
-      }
-      if (nextStep.phase === 'eliminated') {
-        setShowEliminatedFlash(true);
-        setTimeout(() => setShowEliminatedFlash(false), 200);
       }
 
       setCurrentStep(prev => prev + 1);
@@ -380,46 +357,16 @@ export default function LinearSearchViz() {
     return Math.max(40, base);
   }, [arraySize]);
 
-  const getTileStyle = (idx: number) => {
-    const step = currentStepData;
-    if (!step) return { ...COLORS.unflipped };
-
-    const isFlipped = step.tilesFaceUp.includes(idx);
-    const isEliminated = step.tilesEliminated.includes(idx);
-    const isCurrent = step.currentIndex === idx;
-    const isFound = step.foundIndex === idx;
-    const isFlipping = step.phase === 'flipped' && isCurrent;
-
-    if (step.phase === 'not-found' || (step.phase === 'complete' && !step.foundIndex && step.tilesEliminated.length > 0)) {
-      return { ...COLORS.unflippedFailure };
-    }
-
-    if (isFound) return { ...COLORS.match };
-    if (isEliminated) {
-      const dimFactor = showEliminatedFlash ? 0.6 : 0.7;
-      return {
-        border: COLORS.eliminated.border,
-        text: COLORS.eliminated.text,
-        bg: COLORS.eliminated.bg,
-        dim: dimFactor,
-      };
-    }
-    if (isFlipped && !isFound) return { ...COLORS.flipped };
-    if (isFlipping) return { ...COLORS.flipped };
-
-    return { ...COLORS.unflipped };
-  };
-
   const getExplanation = (step: SearchStep) => {
     if (step.phase === 'idle') {
       return `Linear search is the simplest search algorithm — check each tile from left to right until you find the target. No shortcuts, no preparation. Just looking.`;
     }
     if (step.phase === 'examining') {
-      return `About to check position ${step.currentIndex + 1}. The tile is still face-down — we do not know what number is hiding there yet.`;
+      return `Checking position ${step.currentIndex + 1}. The pointer moves to the next tile.`;
     }
     if (step.phase === 'flipped') {
       const val = step.array[step.currentIndex];
-      return `${val} is revealed! Compare it to ${step.target} in your mind. Is it the one we are looking for?`;
+      return `Comparing ${val} with ${step.target}...`;
     }
     if (step.phase === 'match') {
       return `Match found! ${step.target} was at position ${step.foundIndex! + 1}. The search stops immediately — no need to check any more tiles.`;
@@ -650,16 +597,34 @@ export default function LinearSearchViz() {
               </svg>
             )}
 
-            <div className="flex items-center gap-[6px]" style={{ transform: `scale(1)` }}>
+            <div className="flex items-center gap-[6px]">
               {currentStepData.array.map((val, idx) => {
-                const style = getTileStyle(idx);
-                const isFlipped = currentStepData.tilesFaceUp.includes(idx);
                 const isEliminated = currentStepData.tilesEliminated.includes(idx);
+                const isCurrent = currentStepData.currentIndex === idx;
                 const isFound = currentStepData.foundIndex === idx;
-                const isFlipping = currentStepData.phase === 'flipped' && currentStepData.currentIndex === idx;
-                const isNotFoundPhase = currentStepData.phase === 'not-found' || (currentStepData.phase === 'complete' && !currentStepData.foundIndex && currentStepData.tilesEliminated.length > 0);
 
                 const dimFactor = isEliminated ? eliminatedBreath : 1;
+
+                let borderColor = COLORS.unsorted.border;
+                let bgColor = COLORS.unsorted.bg;
+                let textColor = COLORS.unsorted.text;
+                let glow = 'none';
+
+                if (isFound) {
+                  borderColor = COLORS.match.border;
+                  bgColor = COLORS.match.bg;
+                  textColor = COLORS.match.text;
+                  glow = `0 0 20px ${COLORS.match.border}80, 0 0 40px ${COLORS.match.border}40`;
+                } else if (isCurrent) {
+                  borderColor = '#40d8d0';
+                  bgColor = '#0a1e1e';
+                  textColor = '#40d8d0';
+                  glow = `0 0 12px #40d8d060`;
+                } else if (isEliminated) {
+                  borderColor = COLORS.eliminated.border;
+                  bgColor = COLORS.eliminated.bg;
+                  textColor = COLORS.eliminated.text;
+                }
 
                 return (
                   <div
@@ -668,64 +633,28 @@ export default function LinearSearchViz() {
                     style={{
                       width: tileSize,
                       height: tileSize,
-                      perspective: 400,
                       opacity: dimFactor,
                     }}
                   >
                     <div
-                      className="relative w-full h-full transition-transform duration-300"
+                      className="absolute inset-0 rounded-lg flex items-center justify-center font-mono font-bold"
                       style={{
-                        transformStyle: 'preserve-3d',
-                        transform: isFlipped || isNotFoundPhase ? 'rotateY(180deg)' : 'rotateY(0deg)',
+                        border: `3px solid ${borderColor}`,
+                        backgroundColor: bgColor,
+                        color: textColor,
+                        fontSize: tileSize * 0.35,
+                        boxShadow: glow,
                       }}
                     >
-                      {/* Back face */}
-                      <div
-                        className="absolute inset-0 rounded-lg flex items-center justify-center font-mono font-bold"
-                        style={{
-                          backfaceVisibility: 'hidden',
-                          border: `2px solid ${isNotFoundPhase ? COLORS.unflippedFailure.border : COLORS.unflipped.border}`,
-                          backgroundColor: isNotFoundPhase ? COLORS.unflippedFailure.bg : COLORS.unflipped.bg,
-                          boxShadow: 'inset 1px 1px 0 #2a4a48, inset -1px -1px 0 #0a1e1e',
-                        }}
-                      >
-                        <span className="text-lg" style={{ color: COLORS.unflipped.text }}>?</span>
-                      </div>
-
-                      {/* Front face */}
-                      <div
-                        className="absolute inset-0 rounded-lg flex items-center justify-center font-mono font-bold transition-all duration-200"
-                        style={{
-                          backfaceVisibility: 'hidden',
-                          transform: 'rotateY(180deg)',
-                          border: `3px solid ${style.border}`,
-                          backgroundColor: style.bg,
-                          color: style.text,
-                          fontSize: tileSize * 0.35,
-                          boxShadow: isFound ? `0 0 20px ${COLORS.match.border}80, 0 0 40px ${COLORS.match.border}40` : isFlipping ? `0 0 10px ${style.border}40` : 'none',
-                        }}
-                      >
-                        {val}
-                        {isEliminated && !isFound && (
-                          <div className="absolute top-0.5 right-1 text-[8px]" style={{ color: '#4a7a70' }}>✗</div>
-                        )}
-                      </div>
+                      {val}
+                      {isEliminated && !isFound && (
+                        <div className="absolute top-0.5 right-1 text-[8px]">✗</div>
+                      )}
                     </div>
                   </div>
                 );
               })}
             </div>
-
-            {/* Flash overlay */}
-            {showFlipFlash && (
-              <div
-                className="absolute inset-0 rounded-lg pointer-events-none"
-                style={{
-                  background: 'radial-gradient(circle, rgba(64,216,208,0.3) 0%, transparent 70%)',
-                  animation: 'flashFade 0.3s ease-out forwards',
-                }}
-              />
-            )}
           </div>
         </div>
 
@@ -765,23 +694,23 @@ export default function LinearSearchViz() {
                   : currentStepData.currentIndex >= 0 && currentStepData.currentIndex < arraySize
                   ? currentStepData.tilesEliminated.includes(currentStepData.currentIndex)
                     ? COLORS.eliminated.border
-                    : COLORS.flipped.border
-                  : COLORS.unflipped.border
+                    : COLORS.unsorted.border
+                  : COLORS.unsorted.border
               }`,
               backgroundColor: currentStepData.currentIndex >= 0 && currentStepData.currentIndex < arraySize
                 ? currentStepData.tilesEliminated.includes(currentStepData.currentIndex)
                   ? COLORS.eliminated.bg
                   : currentStepData.phase === 'match'
                   ? COLORS.match.bg
-                  : COLORS.flipped.bg
-                : COLORS.unflipped.bg,
+                  : COLORS.unsorted.bg
+                : COLORS.unsorted.bg,
               color: currentStepData.currentIndex >= 0 && currentStepData.currentIndex < arraySize
                 ? currentStepData.tilesEliminated.includes(currentStepData.currentIndex)
                   ? COLORS.eliminated.text
                   : currentStepData.phase === 'match'
                   ? COLORS.match.text
-                  : COLORS.flipped.text
-                : COLORS.unflipped.text,
+                  : COLORS.unsorted.text
+                : COLORS.unsorted.text,
               fontSize: 18,
               boxShadow: currentStepData.phase === 'match' ? `0 0 12px ${COLORS.match.border}60` : 'none',
             }}
@@ -826,7 +755,7 @@ export default function LinearSearchViz() {
             <RotateCcw size={16} />
           </button>
           <button
-            onClick={() => { setPlaying(false); setCurrentStep(0); setShowFlipFlash(false); setShowMatchArc(false); setShowEliminatedFlash(false); }}
+            onClick={() => { setPlaying(false); setCurrentStep(0); setShowMatchArc(false); }}
             className="px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm font-medium transition-colors"
           >
             Restart
