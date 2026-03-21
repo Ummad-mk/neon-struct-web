@@ -18,6 +18,8 @@ import HeapSortViz from './components/visualizations/HeapSortViz';
 import BubbleSortViz from './components/visualizations/BubbleSortViz';
 import LinearSearchViz from './components/visualizations/LinearSearchViz';
 import JumpSearchViz from './components/visualizations/JumpSearchViz';
+import BinarySearchViz from './components/visualizations/BinarySearchViz';
+import ExponentialSearchViz from './components/visualizations/ExponentialSearchViz';
 
 function App() {
   // --- View & Layout State ---
@@ -572,6 +574,10 @@ function App() {
             <LinearSearchViz />
           ) : currentView === 'jump_search' ? (
             <JumpSearchViz />
+          ) : currentView === 'binary_search' ? (
+            <BinarySearchViz />
+          ) : currentView === 'exponential_search' ? (
+            <ExponentialSearchViz />
           ) : (
             <>
               <VisualizationCanvas

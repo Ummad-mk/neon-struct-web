@@ -81,6 +81,8 @@ const SEARCHING_GROUPS = [
     items: [
       { type: 'linear_search', label: 'Linear Search', icon: Search },
       { type: 'jump_search', label: 'Jump Search', icon: Search },
+      { type: 'binary_search', label: 'Binary Search', icon: Search },
+      { type: 'exponential_search', label: 'Exponential Search', icon: Search },
     ]
   }
 ];

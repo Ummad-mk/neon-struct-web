@@ -20,7 +20,9 @@ export type DataStructureType =
   | 'heap_sort'
   | 'bubble_sort'
   | 'linear_search'
-  | 'jump_search';
+  | 'jump_search'
+  | 'binary_search'
+  | 'exponential_search';
 
 export interface OperationInfo {
   name: string;
