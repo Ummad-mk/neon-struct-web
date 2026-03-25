@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { DataStructureType, ApiResponse } from '../types/dataStructures';
 
 // src/hooks/useDataStructure.ts
-const API_URL = '/api'; // Uses Vite proxy
+const API_URL = import.meta.env.VITE_API_URL || '/api'; // Use env var in production, proxy in dev
 
 export const useDataStructure = (type: DataStructureType) => {
   const [state, setState] = useState<any>(null);
