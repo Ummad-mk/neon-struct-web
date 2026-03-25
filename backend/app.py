@@ -644,6 +644,9 @@ def kruskals_mst(ds_type, ds_id):
 def health():
     return jsonify({'status': 'ok'})
 
+import os
+
 if __name__ == '__main__':
+    port = int(os.getenv("PORT", 5000))
     # Change host to '0.0.0.0' to ensure it's accessible
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=False, host='0.0.0.0', port=port)
